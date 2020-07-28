@@ -5,6 +5,7 @@ import slash = require("slash");
 import superagent = require("superagent");
 import * as recursiveFs from "recursive-fs";
 import * as yazl from "yazl";
+import * as adapter from "../utils/adapter/adapter"
 import { CodePushUnauthorizedError } from "../utils/code-push-error"
 
 import { AccessKey, AccessKeyRequest, Account, App, AppCreationRequest, CodePushError, CollaboratorMap, CollaboratorProperties, Deployment, DeploymentMetrics, Headers, Package, PackageInfo, ServerAccessKey, Session, UpdateMetrics } from "./types";
@@ -42,8 +43,7 @@ class AccountManager {
         OWNER: "Owner",
         COLLABORATOR: "Collaborator"
     };
-    public static SERVER_URL = "https://codepush.appcenter.ms/v0.1/legacy";
-    public static MOBILE_CENTER_SERVER_URL = "https://mobile.azure.com";
+    public static SERVER_URL = "https://api.appcenter.ms/v0.1";
 
     private static API_VERSION: number = 2;
 
@@ -73,7 +73,7 @@ class AccountManager {
 
     public isAuthenticated(throwIfUnauthorized?: boolean): Promise<boolean> {
         return new Promise<any>((resolve, reject) => {
-            var request: superagent.Request = superagent.get(this._serverUrl + urlEncode`/authenticated`);
+            var request: superagent.Request = superagent.get(this._serverUrl + urlEncode`/user`);
             if (this._proxy) (<any>request).proxy(this._proxy);
             this.attachCredentials(request);
 
@@ -102,19 +102,12 @@ class AccountManager {
         }
 
         var accessKeyRequest: AccessKeyRequest = {
-            createdBy: os.hostname(),
-            friendlyName,
-            ttl
+            description: friendlyName
         };
 
-        return this.post(urlEncode`/accessKeys/`, JSON.stringify(accessKeyRequest), /*expectResponseBody=*/ true)
+        return this.post(urlEncode`/api_tokens`, JSON.stringify(accessKeyRequest), /*expectResponseBody=*/ true)
             .then((response: JsonResponse) => {
-                return {
-                    createdTime: response.body.accessKey.createdTime,
-                    expires: response.body.accessKey.expires,
-                    key: response.body.accessKey.name,
-                    name: response.body.accessKey.friendlyName
-                };
+                return adapter.toLegacyAccessKey(response.body);
             });
     }
 
@@ -130,19 +123,9 @@ class AccountManager {
     }
 
     public getAccessKeys(): Promise<AccessKey[]> {
-        return this.get(urlEncode`/accessKeys`)
+        return this.get(urlEncode`/api_tokens`)
             .then((res: JsonResponse) => {
-                var accessKeys: AccessKey[] = [];
-
-                res.body.accessKeys.forEach((serverAccessKey: ServerAccessKey) => {
-                    !serverAccessKey.isSession && accessKeys.push({
-                        createdTime: serverAccessKey.createdTime,
-                        expires: serverAccessKey.expires,
-                        name: serverAccessKey.friendlyName
-                    });
-                });
-
-                return accessKeys;
+                return adapter.toLegacyAccessKeyList(res.body);
             });
     }
 
@@ -198,8 +181,10 @@ class AccountManager {
 
     // Account
     public getAccountInfo(): Promise<Account> {
-        return this.get(urlEncode`/account`)
-            .then((res: JsonResponse) => res.body.account);
+        return this.get(urlEncode`/user`)
+            .then((res: JsonResponse) => { 
+                return adapter.toLegacyAccount(res.body);
+            });
     }
 
     // Apps
@@ -511,7 +496,7 @@ class AccountManager {
         }
 
         request.set("Accept", `application/vnd.code-push.v${AccountManager.API_VERSION}+json`);
-        request.set("Authorization", `Bearer ${this._accessKey}`);
+        request.set("x-api-token", `${this._accessKey}`);
         request.set("X-CodePush-SDK-Version", packageJson.version);
     }
 
