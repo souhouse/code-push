@@ -125,6 +125,8 @@ export interface AppCreationRequest extends App {
 
 /*inout*/
 export interface Deployment {
+  /*generated*/ createdTime?: number;
+  /*generated*/ id?: string;
   /*generated key*/ key?: string;
   /*key*/ name: string;
   /*generated*/ package?: Package;
@@ -151,6 +153,8 @@ export interface Package extends PackageInfo {
   /*generated*/ releaseMethod?: string; // "Upload", "Promote" or "Rollback". Unknown if unspecified
   /*generated*/ size: number;
   /*generated*/ uploadTime: number;
+  releasedByUserId: string;
+  manifestBlobUrl: string;
 }
 
 export interface CodePushError {

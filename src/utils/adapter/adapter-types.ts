@@ -1,3 +1,5 @@
+import { PackageHashToBlobInfoMap } from "../../script/types"
+
 export type AppMemberPermissions = 'manager' | 'developer' | 'viewer' | 'tester';
 
 export interface UserProfile {
@@ -63,4 +65,30 @@ export interface ApiTokensGetResponse {
    * The creation time
    */
   created_at: string;
+}
+
+export interface Deployment {
+  /*generated*/ createdTime: number;
+  /*generated*/ id?: string;
+  name: string;
+  key: string;
+  latest_release?: any;
+  removedEmail?: string;
+}
+
+export interface CodePushRelease {
+  releasedByUserId: string;
+  manifestBlobUrl: string;
+  target_binary_range: string;
+  is_disabled?: boolean;
+  package_hash?: string;
+  released_by?: string;
+  release_method?: string;
+  upload_time: number;
+  is_mandatory?: boolean;
+  blob_url: string;
+  label?: string
+  rollout?: number;
+  size: number;
+  diffPackageMap?: PackageHashToBlobInfoMap;
 }

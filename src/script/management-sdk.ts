@@ -224,7 +224,7 @@ class AccountManager {
 
     public getDeployments(appName: string): Promise<Deployment[]> {
         return this._requestManager.get(urlEncode`/apps/${this.appNameParam(appName)}/deployments/`)
-            .then((res: JsonResponse) => res.body.deployments);
+            .then((res: JsonResponse) => this._adapter.toLegacyDeployments(res.body));
     }
 
     public getDeployment(appName: string, deploymentName: string): Promise<Deployment> {

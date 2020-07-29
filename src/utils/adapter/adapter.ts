@@ -1,4 +1,4 @@
-import { UserProfile, ApiToken, ApiTokensGetResponse } from "./adapter-types";
+import * as adapter_types from "./adapter-types";
 import * as sdk_types from "../../script/types";
 import RequestManager from "../request-manager";
 
@@ -6,7 +6,7 @@ import RequestManager from "../request-manager";
 class Adapter {
     constructor(private readonly _requestManager: RequestManager) { }
 
-    public toLegacyAccount(profile: UserProfile): sdk_types.Account {
+    public toLegacyAccount(profile: adapter_types.UserProfile): sdk_types.Account {
         return {
             name: profile.name,
             email: profile.email,
@@ -14,7 +14,7 @@ class Adapter {
         };
     }
 
-    public toLegacyAccessKey(apiToken: ApiToken): sdk_types.AccessKey {
+    public toLegacyAccessKey(apiToken: adapter_types.ApiToken): sdk_types.AccessKey {
         const accessKey: sdk_types.AccessKey = {
             createdTime: Date.parse(apiToken.created_at),
             expires: Date.parse('9999-12-31T23:59:59'), // never,
@@ -25,7 +25,7 @@ class Adapter {
         return accessKey;
     }
 
-    public toLegacyAccessKeyList(apiTokens: ApiTokensGetResponse[]): sdk_types.AccessKey[] {
+    public toLegacyAccessKeyList(apiTokens: adapter_types.ApiTokensGetResponse[]): sdk_types.AccessKey[] {
         console.log(apiTokens);
         const accessKeyList: sdk_types.AccessKey[] = apiTokens.map((apiToken) => {
             const accessKey: sdk_types.AccessKey = {
@@ -44,6 +44,73 @@ class Adapter {
         });
 
         return accessKeyList;
+    }
+
+    public toLegacyDeployments(deployments: adapter_types.Deployment[]): sdk_types.Deployment[] {
+        deployments.sort((first: adapter_types.Deployment, second: adapter_types.Deployment) => {
+            return first.name.localeCompare(second.name);
+        });
+
+        return this.toLegacyRestDeployments(deployments);
+    };
+
+    private toLegacyRestDeployments(apiGatewayDeployments: adapter_types.Deployment[]): sdk_types.Deployment[] {
+        const deployments: sdk_types.Deployment[] = apiGatewayDeployments.map((deployment) => {
+            return this.toLegacyRestDeployment(deployment, true);
+        });
+
+        return deployments;
+    }
+
+    private toLegacyRestDeployment(
+        deployment: adapter_types.Deployment,
+        allProperties: boolean = false
+    ): sdk_types.Deployment {
+        const apiGatewayPackage = this.releaseToPackage(deployment.latest_release);
+
+        const restDeployment: sdk_types.Deployment = {
+            name: deployment.name,
+            key: deployment.key,
+            package: apiGatewayPackage
+        };
+
+        if (allProperties) {
+            restDeployment.id = deployment.id;// this is undefined
+            restDeployment.createdTime = deployment.createdTime;// this is undefined
+        }
+
+        return restDeployment;
+    }
+
+    private releaseToPackage(storageRelease: adapter_types.CodePushRelease): sdk_types.Package {
+        if (!storageRelease) {
+            return null;
+        }
+
+        const restRelease: sdk_types.Package = {
+            appVersion: storageRelease.target_binary_range,
+            blobUrl: storageRelease.blob_url,
+            isDisabled: storageRelease.is_disabled,
+            isMandatory: storageRelease.is_mandatory,
+            label: storageRelease.label,
+            packageHash: storageRelease.package_hash,
+            releasedByUserId: storageRelease.released_by,
+            releaseMethod: storageRelease.release_method,
+            rollout: storageRelease.rollout,
+            size: storageRelease.size,
+            uploadTime: storageRelease.upload_time,
+            manifestBlobUrl: storageRelease.manifestBlobUrl // this is undefined
+        };
+
+        if (storageRelease.diffPackageMap) {
+            restRelease.diffPackageMap = storageRelease.diffPackageMap;
+        }
+
+        if (restRelease.rollout === undefined || restRelease.rollout === null) {
+            restRelease.rollout = 100;
+        }
+
+        return restRelease;
     }
 
     private parseApiAppName(
