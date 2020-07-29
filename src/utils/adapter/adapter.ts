@@ -71,6 +71,19 @@ class Adapter {
         return this.toLegacyRestDeployments(deployments);
     };
 
+    public toReleaseUploadProperties(updateMetadata: sdk_types.PackageInfo, releaseUploadAssets: sdk_types.ReleaseUploadAssets, deploymentName: string): sdk_types.UploadReleaseProperties {
+        return {
+            release_upload: releaseUploadAssets,
+            target_binary_version: updateMetadata.appVersion,
+            deployment_name: deploymentName,
+            description: updateMetadata.description,
+            disabled: updateMetadata.isDisabled,
+            mandatory: updateMetadata.isMandatory,
+            no_duplicate_release_error: false, // This property is not implemented in CodePush SDK Management
+            rollout: updateMetadata.rollout
+        }
+    }
+
     private toLegacyRestDeployments(apiGatewayDeployments: adapter_types.Deployment[]): sdk_types.Deployment[] {
         const deployments: sdk_types.Deployment[] = apiGatewayDeployments.map((deployment) => {
             return this.toLegacyRestDeployment(deployment, true);

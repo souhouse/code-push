@@ -6,8 +6,9 @@ import * as yazl from "yazl";
 import Adapter from "../utils/adapter/adapter"
 import RequestManager from "../utils/request-manager"
 import { CodePushUnauthorizedError } from "../utils/code-push-error"
+import FileUploadClient, { MessageLevel } from "appcenter-file-upload-client";
 
-import { AccessKey, AccessKeyRequest, Account, App, AppCreationRequest, CodePushError, CollaboratorMap, CollaboratorProperties, Deployment, DeploymentMetrics, Headers, Package, PackageInfo, ServerAccessKey, Session, UpdateMetrics } from "./types";
+import { AccessKey, AccessKeyRequest, Account, App, AppCreationRequest, CodePushError, CollaboratorMap, CollaboratorProperties, Deployment, DeploymentMetrics, Headers, Package, PackageInfo, ServerAccessKey, Session, UpdateMetrics, ReleaseUploadAssets, UploadReleaseProperties } from "./types";
 
 interface JsonResponse {
     headers: Headers;
@@ -41,6 +42,10 @@ class AccountManager {
     private _accessKey: string;
     private _requestManager: RequestManager;
     private _adapter: Adapter;
+    private _serverUrl: string;
+    private _customHeaders: Headers;
+    private _proxy: string;
+    private _fileUploadClient: FileUploadClient;
 
     constructor(accessKey: string, customHeaders?: Headers, serverUrl?: string, proxy?: string) {
         if (!accessKey) throw new CodePushUnauthorizedError("A token must be specified.");
@@ -48,6 +53,10 @@ class AccountManager {
         this._accessKey = accessKey;
         this._requestManager = new RequestManager(accessKey, customHeaders, serverUrl, proxy);
         this._adapter = new Adapter(this._requestManager);
+        this._customHeaders = customHeaders;
+        this._serverUrl = serverUrl;
+        this._proxy = proxy;
+        this._fileUploadClient = new FileUploadClient();
     }
 
     public get accessKey(): string {
@@ -254,6 +263,7 @@ class AccountManager {
             .then((res: JsonResponse) => res.body.history);
     }
 
+
     // public release(appName: string, deploymentName: string, filePath: string, targetBinaryVersion: string, updateMetadata: PackageInfo, uploadProgressCallback?: (progress: number) => void): Promise<Package> {
 
     //     return new Promise<Package>((resolve, reject) => {
@@ -302,6 +312,34 @@ class AccountManager {
     //         });
     //     });
     // }
+
+    public async release(appName: string, deploymentName: string, filePath: string, targetBinaryVersion: string, updateMetadata: PackageInfo, uploadProgressCallback?: (progress: number) => void): Promise<Package> {
+
+        updateMetadata.appVersion = targetBinaryVersion;
+        var packageFile: PackageFile = await this.packageFileFromPath(filePath);
+
+        //const userName = this.getUser().then(user => user.name);
+        const userName = "v-algonc";
+        let assets;
+
+        // "https://api.appcenter.ms/v0.1/apps/v-algonc/test47/deployments/Staging/uploads"
+        const jsonResponse: JsonResponse = await this._requestManager.post(urlEncode`/apps/${userName}/${appName}/deployments/${deploymentName}/uploads`, null, true)
+        assets = jsonResponse.body as ReleaseUploadAssets;
+
+        await this._fileUploadClient.upload({
+            assetId: assets.id,
+            assetDomain: assets.uploadDomain,
+            assetToken: assets.token,
+            file: packageFile.path,
+            onMessage: (errorMessage: string, level: MessageLevel) => {
+                console.log(`Upload client message: ${errorMessage}`); // TODO: add error handling
+            }
+        });
+
+        const releaseUploadProperties = this._adapter.toReleaseUploadProperties(updateMetadata, assets, deploymentName);
+
+        return;
+    }
 
     public patchRelease(appName: string, deploymentName: string, label: string, updateMetadata: PackageInfo): Promise<void> {
         updateMetadata.label = label;
