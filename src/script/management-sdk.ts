@@ -12,8 +12,6 @@ import { AccessKey, AccessKeyRequest, Account, App, AppCreationRequest, CodePush
 var superproxy = require("superagent-proxy");
 superproxy(superagent);
 
-var packageJson = require("../package.json");
-
 interface JsonResponse {
     headers: Headers;
     body?: any;
@@ -42,10 +40,7 @@ class AccountManager {
         OWNER: "Owner",
         COLLABORATOR: "Collaborator"
     };
-    public static SERVER_URL = "https://codepush.appcenter.ms/v0.1/legacy";
-    public static MOBILE_CENTER_SERVER_URL = "https://mobile.azure.com";
-
-    private static API_VERSION: number = 2;
+    public static SERVER_URL = "https://api.appcenter.ms/v0.1";
 
     public static ERROR_GATEWAY_TIMEOUT = 504;  // Used if there is a network error
     public static ERROR_INTERNAL_SERVER = 500;
@@ -510,9 +505,7 @@ class AccountManager {
             }
         }
 
-        request.set("Accept", `application/vnd.code-push.v${AccountManager.API_VERSION}+json`);
-        request.set("Authorization", `Bearer ${this._accessKey}`);
-        request.set("X-CodePush-SDK-Version", packageJson.version);
+        request.set("x-api-token", `${this._accessKey}`);
     }
 
     // IIS and Azure web apps have this annoying behavior where %2F (URL encoded slashes) in the URL are URL decoded
