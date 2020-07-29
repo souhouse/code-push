@@ -92,3 +92,7 @@ export interface CodePushRelease {
   size: number;
   diffPackageMap?: PackageHashToBlobInfoMap;
 }
+export interface apiAppParams {
+  appOwner: string;
+  appName: string;
+}

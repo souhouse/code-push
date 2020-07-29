@@ -2,7 +2,6 @@ import * as adapter_types from "./adapter-types";
 import * as sdk_types from "../../script/types";
 import RequestManager from "../request-manager";
 
-
 class Adapter {
     constructor(private readonly _requestManager: RequestManager) { }
 
@@ -37,13 +36,31 @@ class Adapter {
             return accessKey;
         });
 
-        accessKeyList.sort((first: sdk_types.AccessKey, second: sdk_types.AccessKey) => {
-            const firstTime = first.createdTime || 0;
-            const secondTime = second.createdTime || 0;
-            return firstTime - secondTime;
-        });
+        accessKeyList.sort(
+            (first: sdk_types.AccessKey, second: sdk_types.AccessKey) => {
+                const firstTime = first.createdTime || 0;
+                const secondTime = second.createdTime || 0;
+                return firstTime - secondTime;
+            }
+        );
 
         return accessKeyList;
+    }
+
+    public async parseApiAppName(apiAppName: string): Promise<adapter_types.apiAppParams> {
+        const callingUser = await this.getUser();
+        // If the separating / is not included, assume the owner is the calling user and only the app name is provided
+        if (!apiAppName.includes("/")) {
+            return {
+                appOwner: callingUser.name,
+                appName: apiAppName,
+            };
+        }
+        const [appOwner, appName] = apiAppName.split("/");
+        return {
+            appOwner: appOwner,
+            appName: appName,
+        };
     }
 
     public toLegacyDeployments(deployments: adapter_types.Deployment[]): sdk_types.Deployment[] {
@@ -113,23 +130,13 @@ class Adapter {
         return restRelease;
     }
 
-    private parseApiAppName(
-        apiAppName: string,
-        callingUserName: string
-    ): {
-        appOwner: string;
-        appName: string;
-    } {
-        // If the separating ~~ is not included, assume the owner is the calling user and only the app name is provided
-        if (!apiAppName.includes('~~')) {
-            return {
-                appOwner: callingUserName,
-                appName: apiAppName
-            };
+    private async getUser(): Promise<adapter_types.UserProfile> {
+        try {
+            const res = await this._requestManager.get(`/user`);
+            return res.body;
+        } catch (error) {
+            throw error;
         }
-        const [appOwner, appName] = apiAppName.split('~~');
-
-        return { appOwner, appName };
     }
 }
 
