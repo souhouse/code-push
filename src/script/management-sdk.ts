@@ -54,33 +54,31 @@ class AccountManager {
         return this._accessKey;
     }
 
-    public isAuthenticated(throwIfUnauthorized?: boolean): Promise<boolean> {
-        return this._requestManager.get(urlEncode`/user`)
-            .then((res: JsonResponse) => {
-                const authenticated: boolean = !!res.body;
+    public async isAuthenticated(throwIfUnauthorized?: boolean): Promise<boolean> {
+        const res: JsonResponse = await this._requestManager.get(urlEncode`/user`);
+        const authenticated: boolean = !!res.body;
 
-                if (!authenticated && throwIfUnauthorized) {
-                    throw new Error("Unauthorized.");
-                }
-                return authenticated;
-            });
+        if (!authenticated && throwIfUnauthorized) {
+            throw new Error("Unauthorized.");
+        }
+        return authenticated;
     }
 
-    public addAccessKey(friendlyName: string, ttl?: number): Promise<AccessKey> {
+    public async addAccessKey(friendlyName: string, ttl?: number): Promise<AccessKey> {
         if (!friendlyName) {
             throw new CodePushUnauthorizedError("A name must be specified when adding an access key.");
         }
 
-        var accessKeyRequest: AccessKeyRequest = {
+        const accessKeyRequest: AccessKeyRequest = {
             description: friendlyName
         };
 
-        return this._requestManager.post(urlEncode`/api_tokens`, JSON.stringify(accessKeyRequest), /*expectResponseBody=*/ true)
-            .then((response: JsonResponse) => {
-                return this._adapter.toLegacyAccessKey(response.body);
-            });
+        const res: JsonResponse = await this._requestManager.post(urlEncode`/api_tokens`, JSON.stringify(accessKeyRequest), /*expectResponseBody=*/ true);
+        const accessKey = this._adapter.toLegacyAccessKey(res.body);
+        return accessKey;
     }
 
+    // Deprecated
     public getAccessKey(accessKeyName: string): Promise<AccessKey> {
         return this._requestManager.get(urlEncode`/accessKeys/${accessKeyName}`)
             .then((res: JsonResponse) => {
@@ -92,13 +90,13 @@ class AccountManager {
             })
     }
 
-    public getAccessKeys(): Promise<AccessKey[]> {
-        return this._requestManager.get(urlEncode`/api_tokens`)
-            .then((res: JsonResponse) => {
-                return this._adapter.toLegacyAccessKeyList(res.body);
-            });
+    public async getAccessKeys(): Promise<AccessKey[]> {
+        const res: JsonResponse = await this._requestManager.get(urlEncode`/api_tokens`);
+        const accessKeys = this._adapter.toLegacyAccessKeyList(res.body);
+        return accessKeys;
     }
 
+    // Deprecated
     public getSessions(): Promise<Session[]> {
         return this._requestManager.get(urlEncode`/accessKeys`)
             .then((res: JsonResponse) => {
@@ -122,7 +120,7 @@ class AccountManager {
             });
     }
 
-
+    // Deprecated
     public patchAccessKey(oldName: string, newName?: string, ttl?: number): Promise<AccessKey> {
         var accessKeyRequest: AccessKeyRequest = {
             friendlyName: newName,
@@ -139,22 +137,22 @@ class AccountManager {
             });
     }
 
-    public removeAccessKey(name: string): Promise<void> {
-        return this._requestManager.del(urlEncode`/accessKeys/${name}`)
-            .then(() => null);
+    public async removeAccessKey(name: string): Promise<void> {
+        await this._requestManager.del(urlEncode`/accessKeys/${name}`);
+        return;
     }
 
+    // Deprecated
     public removeSession(machineName: string): Promise<void> {
         return this._requestManager.del(urlEncode`/sessions/${machineName}`)
             .then(() => null);
     }
 
     // Account
-    public getAccountInfo(): Promise<Account> {
-        return this._requestManager.get(urlEncode`/user`)
-            .then((res: JsonResponse) => {
-                return this._adapter.toLegacyAccount(res.body);
-            });
+    public async getAccountInfo(): Promise<Account> {
+        const res: JsonResponse = await this._requestManager.get(urlEncode`/user`);
+        const accountInfo = this._adapter.toLegacyAccount(res.body);
+        return accountInfo;
     }
 
     // Apps
@@ -191,6 +189,7 @@ class AccountManager {
             .then(() => null);
     }
 
+    // Deprecated
     public transferApp(appName: string, email: string): Promise<void> {
         return this._requestManager.post(urlEncode`/apps/${this.appNameParam(appName)}/transfer/${email}`, /*requestBody=*/ null, /*expectResponseBody=*/ false)
             .then(() => null);
@@ -226,14 +225,14 @@ class AccountManager {
 
     public async getDeployments(apiAppName: string): Promise<Deployment[]> {
         const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
-        const res: JsonResponse = await this._requestManager.get(urlEncode`/apps/${appOwner}/${this.appNameParam(appName)}/deployments/`);
+        const res: JsonResponse = await this._requestManager.get(urlEncode`/apps/${appOwner}/${appName}/deployments/`);
 
         return this._adapter.toLegacyDeployments(res.body);
     }
 
     public async getDeployment(apiAppName: string, deploymentName: string): Promise<Deployment> {
         const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
-        const res: JsonResponse = await this._requestManager.get(urlEncode`/apps/${appOwner}/${this.appNameParam(appName)}/deployments/${deploymentName}`);
+        const res: JsonResponse = await this._requestManager.get(urlEncode`/apps/${appOwner}/${appName}}/deployments/${deploymentName}`);
 
         return this._adapter.toLegacyDeployment(res.body);
     }
