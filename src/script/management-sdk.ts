@@ -319,28 +319,26 @@ class AccountManager {
 
         updateMetadata.appVersion = targetBinaryVersion;
         var packageFile: PackageFile = await this.packageFileFromPath(filePath);
-
-        //const userName = this.getUser().then(user => user.name);
         const userName = "v-algonc";
-        let assets;
 
-        // "https://api.appcenter.ms/v0.1/apps/v-algonc/test47/deployments/Staging/uploads"
-        const jsonResponse: JsonResponse = await this._requestManager.post(urlEncode`/apps/${userName}/${appName}/deployments/${deploymentName}/uploads`, null, true)
-        assets = jsonResponse.body as ReleaseUploadAssets;
+        const assetJsonResponse: JsonResponse = await this._requestManager.post(urlEncode`/apps/${userName}/${appName}/deployments/${deploymentName}/uploads`, null, true)
+        const assets = assetJsonResponse.body as ReleaseUploadAssets;
 
         await this._fileUploadClient.upload({
             assetId: assets.id,
-            assetDomain: assets.uploadDomain,
+            assetDomain: assets.upload_domain,
             assetToken: assets.token,
             file: packageFile.path,
             onMessage: (errorMessage: string, level: MessageLevel) => {
                 console.log(`Upload client message: ${errorMessage}`); // TODO: add error handling
-            }
+            },
         });
 
-        const releaseUploadProperties = this._adapter.toReleaseUploadProperties(updateMetadata, assets, deploymentName);
+        const releaseUploadProperties: UploadReleaseProperties = this._adapter.toReleaseUploadProperties(updateMetadata, assets, deploymentName);
+        const releaseJsonResponse: JsonResponse = await this._requestManager.post(urlEncode`/apps/${userName}/${appName}/deployments/${deploymentName}/releases`, JSON.stringify(releaseUploadProperties), true);
+        const releasePackage: Package = this._adapter.toLegacyPackage(releaseJsonResponse.body);
 
-        return;
+        return releasePackage;
     }
 
     public patchRelease(appName: string, deploymentName: string, label: string, updateMetadata: PackageInfo): Promise<void> {

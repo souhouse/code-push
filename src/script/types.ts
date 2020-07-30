@@ -177,7 +177,7 @@ export interface Session {
 /*in*/
 export interface ReleaseUploadAssets {
   id: string;
-  uploadDomain: string;
+  upload_domain: string;
   token: string;
 }
 

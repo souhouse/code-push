@@ -88,6 +88,21 @@ class Adapter {
         return this.toLegacyRestDeployment(deployment);
     };
 
+    public toLegacyPackage(releasePackage: adapter_types.CodePushReleasePackage): sdk_types.Package {
+        return {
+            blobUrl: releasePackage.blob_url,
+            diffPackageMap: releasePackage.diff_package_map,
+            originalLabel: releasePackage.original_label,
+            originalDeployment: releasePackage.original_deployment,
+            releasedBy: releasePackage.released_by,
+            releaseMethod: releasePackage.release_method,
+            size: releasePackage.size,
+            uploadTime: releasePackage.upload_time,
+            releasedByUserId: null, // Deprecated
+            manifestBlobUrl: null, // Deprecated
+        }
+    }
+
     private toLegacyRestDeployments(apiGatewayDeployments: adapter_types.Deployment[]): sdk_types.Deployment[] {
         const deployments: sdk_types.Deployment[] = apiGatewayDeployments.map((deployment) => {
             return this.toLegacyRestDeployment(deployment, true);

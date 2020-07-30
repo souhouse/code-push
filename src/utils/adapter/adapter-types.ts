@@ -96,3 +96,21 @@ export interface apiAppParams {
   appOwner: string;
   appName: string;
 }
+
+export interface CodePushReleasePackage {
+  target_binary_range?: string;
+  description?: string;
+  is_disabled?: boolean;
+  is_mandatory?: boolean;
+  rollout?: number;
+  label?: string;
+  package_hash?: string;
+  blob_url?: string;
+  diff_package_map?: PackageHashToBlobInfoMap;
+  original_deployment?: string
+  original_label?: string;
+  released_by?: string;
+  release_method?: string;
+  size?: number;
+  upload_time?: number;
+}
