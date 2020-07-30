@@ -164,7 +164,6 @@ class AccountManager {
     public async getApp(apiAppName: string): Promise<App> {
         const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
         const res: JsonResponse = await this._requestManager.get(urlEncode`/apps/${appOwner}/${appName}`);
-
         return res.body;
     }
 
