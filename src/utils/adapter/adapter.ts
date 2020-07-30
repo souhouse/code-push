@@ -82,33 +82,6 @@ class Adapter {
         return legacyApps;
     };
 
-    private toLegacyRestApp(app: adapter_types.App, user: UserProfile, deployments: string[]): sdk_types.App {
-        const isCurrentAccount: boolean = user.id === app.owner.id;
-        const isNameAndDisplayNameSame: boolean = app.name === app.display_name;
-
-        let appName: string = app.name;
-        if (!isCurrentAccount) {
-            appName = app.owner.name + '/' + app.name;
-        }
-
-        if (!isNameAndDisplayNameSame) {
-            appName += `  (${app.display_name})`;
-        }
-
-        return {
-            name: appName,
-            collaborators: {
-                [app.owner.name]: {
-                    isCurrentAccount: user.id === app.owner.id,
-                    permission: 'Owner'
-                }
-            },
-            deployments,
-            os: app.os,
-            platform: app.platform
-        };
-    }
-
     public toLegacyDeployments(deployments: adapter_types.Deployment[]): sdk_types.Deployment[] {
         deployments.sort((first: adapter_types.Deployment, second: adapter_types.Deployment) => {
             return first.name.localeCompare(second.name);
@@ -134,6 +107,33 @@ class Adapter {
         return {
             appOwner: appOwner,
             appName: appName,
+        };
+    }
+
+    private toLegacyRestApp(app: adapter_types.App, user: UserProfile, deployments: string[]): sdk_types.App {
+        const isCurrentAccount: boolean = user.id === app.owner.id;
+        const isNameAndDisplayNameSame: boolean = app.name === app.display_name;
+
+        let appName: string = app.name;
+        if (!isCurrentAccount) {
+            appName = app.owner.name + '/' + app.name;
+        }
+
+        if (!isNameAndDisplayNameSame) {
+            appName += `  (${app.display_name})`;
+        }
+
+        return {
+            name: appName,
+            collaborators: {
+                [app.owner.name]: {
+                    isCurrentAccount: user.id === app.owner.id,
+                    permission: 'Owner'
+                }
+            },
+            deployments,
+            os: app.os,
+            platform: app.platform
         };
     }
 
