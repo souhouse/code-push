@@ -268,7 +268,7 @@ class AccountManager {
     public async release(appName: string, deploymentName: string, filePath: string, targetBinaryVersion: string, updateMetadata: PackageInfo, uploadProgressCallback?: (progress: number) => void): Promise<Package> {
         updateMetadata.appVersion = targetBinaryVersion;
         var packageFile: PackageFile = await this.packageFileFromPath(filePath);
-        const userName = "v-algonc";
+        const userName = (await this.getAccountInfo()).name;
 
         const assetJsonResponse: JsonResponse = await this._requestManager.post(urlEncode`/apps/${userName}/${appName}/deployments/${deploymentName}/uploads`, null, true)
         const assets = assetJsonResponse.body as ReleaseUploadAssets;
