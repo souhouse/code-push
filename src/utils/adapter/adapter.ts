@@ -1,6 +1,7 @@
 import * as adapter_types from "./adapter-types";
 import * as sdk_types from "../../script/types";
 import RequestManager from "../request-manager";
+import { UserProfile } from "./adapter-types";
 
 class Adapter {
     constructor(private readonly _requestManager: RequestManager) { }
@@ -60,6 +61,39 @@ class Adapter {
         return {
             appOwner: appOwner,
             appName: appName,
+        };
+    }
+
+    public async toLegacyApp(app: adapter_types.App): Promise<sdk_types.App> {
+        const [user, deployments] = await Promise.all([this.getUser(), this.getDeployments(app.owner.name, app.name)]);
+        const deploymentsNames = deployments.map((deployment: adapter_types.Deployment) => deployment.name);
+        return this.toLegacyRestApp(app, user, deploymentsNames);
+    };
+
+    private toLegacyRestApp(app: adapter_types.App, user: UserProfile, deployments: string[]): sdk_types.App {
+        const isCurrentAccount: boolean = user.id === app.owner.id;
+        const isNameAndDisplayNameSame: boolean = app.name === app.display_name;
+    
+        let appName: string = app.name;
+        if (!isCurrentAccount) {
+            appName = app.owner.name + '/' + app.name;
+        }
+    
+        if (!isNameAndDisplayNameSame) {
+            appName += `  (${app.display_name})`;
+        }
+    
+        return {
+            name: app.name,
+            collaborators: {
+                [app.owner.name]: {
+                    isCurrentAccount: user.id === app.owner.id,
+                    permission: 'Owner'
+                }
+            },
+            deployments,
+            os: app.os,
+            platform: app.platform
         };
     }
 
@@ -128,6 +162,15 @@ class Adapter {
     private async getUser(): Promise<adapter_types.UserProfile> {
         try {
             const res = await this._requestManager.get(`/user`);
+            return res.body;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    private async getDeployments(appOwner: string, appName: string): Promise<adapter_types.Deployment[]> {
+        try {
+            const res = await this._requestManager.get(`/apps/${appOwner}/${appName}/deployments/`);
             return res.body;
         } catch (error) {
             throw error;

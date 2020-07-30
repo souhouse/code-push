@@ -164,7 +164,8 @@ class AccountManager {
     public async getApp(apiAppName: string): Promise<App> {
         const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
         const res: JsonResponse = await this._requestManager.get(urlEncode`/apps/${appOwner}/${appName}`);
-        return res.body;
+        const app = await this._adapter.toLegacyApp(res.body);
+        return app;
     }
 
     public addApp(appName: string, appOs: string, appPlatform: string, manuallyProvisionDeployments: boolean = false): Promise<App> {
