@@ -77,16 +77,13 @@ class Adapter {
 
     private toLegacyRestDeployments(apiGatewayDeployments: adapter_types.Deployment[]): sdk_types.Deployment[] {
         const deployments: sdk_types.Deployment[] = apiGatewayDeployments.map((deployment) => {
-            return this.toLegacyRestDeployment(deployment, true);
+            return this.toLegacyRestDeployment(deployment);
         });
 
         return deployments;
     }
 
-    private toLegacyRestDeployment(
-        deployment: adapter_types.Deployment,
-        allProperties: boolean = false
-    ): sdk_types.Deployment {
+    private toLegacyRestDeployment(deployment: adapter_types.Deployment): sdk_types.Deployment {
         const apiGatewayPackage = this.releaseToPackage(deployment.latest_release);
 
         const restDeployment: sdk_types.Deployment = {
@@ -94,11 +91,6 @@ class Adapter {
             key: deployment.key,
             package: apiGatewayPackage
         };
-
-        if (allProperties) {
-            restDeployment.id = deployment.id;// this is undefined
-            restDeployment.createdTime = deployment.createdTime;// this is undefined
-        }
 
         return restDeployment;
     }
@@ -119,8 +111,7 @@ class Adapter {
             releaseMethod: storageRelease.release_method,
             rollout: storageRelease.rollout,
             size: storageRelease.size,
-            uploadTime: storageRelease.upload_time,
-            manifestBlobUrl: storageRelease.manifestBlobUrl // this is undefined
+            uploadTime: storageRelease.upload_time
         };
 
         if (storageRelease.diffPackageMap) {

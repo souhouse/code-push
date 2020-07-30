@@ -231,7 +231,7 @@ class AccountManager {
 
     public async getDeployment(apiAppName: string, deploymentName: string): Promise<Deployment> {
         const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
-        const res: JsonResponse = await this._requestManager.get(urlEncode`/apps/${appOwner}/${appName}}/deployments/${deploymentName}`);
+        const res: JsonResponse = await this._requestManager.get(urlEncode`/apps/${appOwner}/${appName}/deployments/${deploymentName}`);
 
         return this._adapter.toLegacyDeployment(res.body);
     }
