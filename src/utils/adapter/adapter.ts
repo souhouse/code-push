@@ -85,16 +85,16 @@ class Adapter {
     private toLegacyRestApp(app: adapter_types.App, user: UserProfile, deployments: string[]): sdk_types.App {
         const isCurrentAccount: boolean = user.id === app.owner.id;
         const isNameAndDisplayNameSame: boolean = app.name === app.display_name;
-    
+
         let appName: string = app.name;
         if (!isCurrentAccount) {
             appName = app.owner.name + '/' + app.name;
         }
-    
+
         if (!isNameAndDisplayNameSame) {
             appName += `  (${app.display_name})`;
         }
-    
+
         return {
             name: appName,
             collaborators: {
@@ -176,8 +176,8 @@ class Adapter {
             uploadTime: storageRelease.upload_time
         };
 
-        if (storageRelease.diffPackageMap) {
-            restRelease.diffPackageMap = storageRelease.diffPackageMap;
+        if (storageRelease.diff_package_map) {
+            restRelease.diffPackageMap = storageRelease.diff_package_map;
         }
 
         if (restRelease.rollout === undefined || restRelease.rollout === null) {

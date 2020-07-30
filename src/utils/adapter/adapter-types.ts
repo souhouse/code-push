@@ -178,7 +178,7 @@ export interface CodePushRelease {
   label?: string
   rollout?: number;
   size: number;
-  diffPackageMap?: PackageHashToBlobInfoMap;
+  diff_package_map?: PackageHashToBlobInfoMap;
 }
 export interface apiAppParams {
   appOwner: string;
