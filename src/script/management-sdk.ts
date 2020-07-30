@@ -239,9 +239,11 @@ class AccountManager {
         return this._adapter.toLegacyDeployment(res.body);
     }
 
-    public renameDeployment(appName: string, oldDeploymentName: string, newDeploymentName: string): Promise<void> {
-        return this._requestManager.patch(urlEncode`/apps/${this.appNameParam(appName)}/deployments/${oldDeploymentName}`, JSON.stringify({ name: newDeploymentName }))
-            .then(() => null);
+    public async renameDeployment(apiAppName: string, oldDeploymentName: string, newDeploymentName: string): Promise<void> {
+        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
+        await this._requestManager.patch(urlEncode`/apps/${appOwner}/${appName}/deployments/${oldDeploymentName}`, JSON.stringify({ name: newDeploymentName }));
+
+        return null;
     }
 
     public removeDeployment(appName: string, deploymentName: string): Promise<void> {
