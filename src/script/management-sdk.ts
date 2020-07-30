@@ -265,56 +265,6 @@ class AccountManager {
             .then((res: JsonResponse) => res.body.history);
     }
 
-
-    // public release(appName: string, deploymentName: string, filePath: string, targetBinaryVersion: string, updateMetadata: PackageInfo, uploadProgressCallback?: (progress: number) => void): Promise<Package> {
-
-    //     return new Promise<Package>((resolve, reject) => {
-
-    //         updateMetadata.appVersion = targetBinaryVersion;
-    //         var request: superagent.Request = superagent.post(this._serverUrl + urlEncode`/apps/${this.appNameParam(appName)}/deployments/${deploymentName}/release`);
-    //         if (this._proxy) (<any>request).proxy(this._proxy);
-    //         this.attachCredentials(request);
-
-    //         var getPackageFilePromise: Promise<PackageFile> = this.packageFileFromPath(filePath);
-
-    //         getPackageFilePromise.then((packageFile: PackageFile) => {
-    //             var file: any = fs.createReadStream(packageFile.path);
-    //             request.attach("package", file)
-    //                 .field("packageInfo", JSON.stringify(updateMetadata))
-    //                 .on("progress", (event: any) => {
-    //                     if (uploadProgressCallback && event && event.total > 0) {
-    //                         var currentProgress: number = event.loaded / event.total * 100;
-    //                         uploadProgressCallback(currentProgress);
-    //                     }
-    //                 })
-    //                 .end((err: any, res: superagent.Response) => {
-
-    //                     if (packageFile.isTemporary) {
-    //                         fs.unlinkSync(packageFile.path);
-    //                     }
-
-    //                     if (err) {
-    //                         reject(this.getCodePushError(err, res));
-    //                         return;
-    //                     }
-
-    //                     try {
-    //                         var body = JSON.parse(res.text);
-    //                     } catch (err) {
-    //                         reject(<CodePushError>{ message: `Could not parse response: ${res.text}`, statusCode: AccountManager.ERROR_INTERNAL_SERVER });
-    //                         return;
-    //                     }
-
-    //                     if (res.ok) {
-    //                         resolve(<Package>body.package);
-    //                     } else {
-    //                         reject(<CodePushError>{ message: body.message, statusCode: res && res.status });
-    //                     }
-    //                 });
-    //         });
-    //     });
-    // }
-
     public async release(appName: string, deploymentName: string, filePath: string, targetBinaryVersion: string, updateMetadata: PackageInfo, uploadProgressCallback?: (progress: number) => void): Promise<Package> {
         updateMetadata.appVersion = targetBinaryVersion;
         var packageFile: PackageFile = await this.packageFileFromPath(filePath);
