@@ -6,9 +6,9 @@ import * as yazl from "yazl";
 import Adapter from "../utils/adapter/adapter"
 import RequestManager from "../utils/request-manager"
 import { CodePushUnauthorizedError } from "../utils/code-push-error"
-import FileUploadClient, { MessageLevel } from "appcenter-file-upload-client";
+import FileUploadClient from "appcenter-file-upload-client";
 
-import { AccessKey, AccessKeyRequest, Account, App, AppCreationRequest, CodePushError, CollaboratorMap, CollaboratorProperties, Deployment, DeploymentMetrics, Headers, Package, PackageInfo, ServerAccessKey, Session, UpdateMetrics, ReleaseUploadAssets, UploadReleaseProperties } from "./types";
+import { AccessKey, AccessKeyRequest, Account, App, AppCreationRequest, CollaboratorMap, CollaboratorProperties, Deployment, DeploymentMetrics, Headers, Package, PackageInfo, ServerAccessKey, Session, UpdateMetrics, ReleaseUploadAssets, UploadReleaseProperties } from "./types";
 
 interface JsonResponse {
     headers: Headers;
@@ -316,7 +316,6 @@ class AccountManager {
     // }
 
     public async release(appName: string, deploymentName: string, filePath: string, targetBinaryVersion: string, updateMetadata: PackageInfo, uploadProgressCallback?: (progress: number) => void): Promise<Package> {
-
         updateMetadata.appVersion = targetBinaryVersion;
         var packageFile: PackageFile = await this.packageFileFromPath(filePath);
         const userName = "v-algonc";
@@ -329,9 +328,6 @@ class AccountManager {
             assetDomain: assets.upload_domain,
             assetToken: assets.token,
             file: packageFile.path,
-            onMessage: (errorMessage: string, level: MessageLevel) => {
-                console.log(`Upload client message: ${errorMessage}`); // TODO: add error handling
-            },
         });
 
         const releaseUploadProperties: UploadReleaseProperties = this._adapter.toReleaseUploadProperties(updateMetadata, assets, deploymentName);
