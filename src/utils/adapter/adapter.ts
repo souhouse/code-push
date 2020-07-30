@@ -89,18 +89,35 @@ class Adapter {
     };
 
     public toLegacyPackage(releasePackage: adapter_types.CodePushReleasePackage): sdk_types.Package {
-        return {
+        const sdkPackage: sdk_types.Package = {
             blobUrl: releasePackage.blob_url,
-            diffPackageMap: releasePackage.diff_package_map,
-            originalLabel: releasePackage.original_label,
-            originalDeployment: releasePackage.original_deployment,
-            releasedBy: releasePackage.released_by,
-            releaseMethod: releasePackage.release_method,
             size: releasePackage.size,
             uploadTime: releasePackage.upload_time,
             releasedByUserId: null, // Deprecated
             manifestBlobUrl: null, // Deprecated
         }
+
+        if (releasePackage.diff_package_map) {
+            sdkPackage.diffPackageMap = releasePackage.diff_package_map;
+        }
+
+        if (releasePackage.original_label) {
+            sdkPackage.originalLabel = releasePackage.original_label;
+        }
+
+        if (releasePackage.original_deployment) {
+            sdkPackage.originalDeployment = releasePackage.original_deployment;
+        }
+
+        if(releasePackage.released_by) {
+            sdkPackage.releasedBy = releasePackage.released_by;
+        }
+
+        if (releasePackage.release_method) {
+            sdkPackage.releaseMethod = releasePackage.release_method;
+        }
+
+        return sdkPackage;
     }
 
     private toLegacyRestDeployments(apiGatewayDeployments: adapter_types.Deployment[]): sdk_types.Deployment[] {
