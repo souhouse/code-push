@@ -48,26 +48,38 @@ class Adapter {
         return accessKeyList;
     }
 
-    public async parseApiAppName(apiAppName: string): Promise<adapter_types.apiAppParams> {
-        const callingUser = await this.getUser();
-        // If the separating / is not included, assume the owner is the calling user and only the app name is provided
-        if (!apiAppName.includes("/")) {
-            return {
-                appOwner: callingUser.name,
-                appName: apiAppName,
-            };
-        }
-        const [appOwner, appName] = apiAppName.split("/");
-        return {
-            appOwner: appOwner,
-            appName: appName,
-        };
-    }
-
     public async toLegacyApp(app: adapter_types.App): Promise<sdk_types.App> {
         const [user, deployments] = await Promise.all([this.getUser(), this.getDeployments(app.owner.name, app.name)]);
         const deploymentsNames = deployments.map((deployment: adapter_types.Deployment) => deployment.name);
         return this.toLegacyRestApp(app, user, deploymentsNames);
+    };
+
+    public async toLegacyApps(apps: adapter_types.App[]): Promise<sdk_types.App[]> {
+        const user = await this.getUser();
+        const sortedApps = await Promise.all(
+            apps.sort((first: adapter_types.App, second: adapter_types.App) => {
+                const firstOwner = first.owner.name || '';
+                const secondOwner = second.owner.name || '';
+
+                // First sort by owner, then by app name
+                if (firstOwner !== secondOwner) {
+                    return firstOwner.localeCompare(secondOwner);
+                } else {
+                    return first.name.localeCompare(second.name);
+                }
+            })
+        );
+
+        const legacyApps = await Promise.all(
+            sortedApps.map(async (app) => {
+                const deployments: adapter_types.Deployment[] = await this.getDeployments(app.owner.name, app.name);
+                const deploymentsNames = deployments.map((deployment: adapter_types.Deployment) => deployment.name);
+
+                return this.toLegacyRestApp(app, user, deploymentsNames);
+            })
+        );
+
+        return legacyApps;
     };
 
     private toLegacyRestApp(app: adapter_types.App, user: UserProfile, deployments: string[]): sdk_types.App {
@@ -84,7 +96,7 @@ class Adapter {
         }
     
         return {
-            name: app.name,
+            name: appName,
             collaborators: {
                 [app.owner.name]: {
                     isCurrentAccount: user.id === app.owner.id,
@@ -108,6 +120,22 @@ class Adapter {
     public toLegacyDeployment(deployment: adapter_types.Deployment): sdk_types.Deployment {
         return this.toLegacyRestDeployment(deployment);
     };
+
+    public async parseApiAppName(apiAppName: string): Promise<adapter_types.apiAppParams> {
+        const callingUser = await this.getUser();
+        // If the separating / is not included, assume the owner is the calling user and only the app name is provided
+        if (!apiAppName.includes("/")) {
+            return {
+                appOwner: callingUser.name,
+                appName: apiAppName,
+            };
+        }
+        const [appOwner, appName] = apiAppName.split("/");
+        return {
+            appOwner: appOwner,
+            appName: appName,
+        };
+    }
 
     private toLegacyRestDeployments(apiGatewayDeployments: adapter_types.Deployment[]): sdk_types.Deployment[] {
         const deployments: sdk_types.Deployment[] = apiGatewayDeployments.map((deployment) => {

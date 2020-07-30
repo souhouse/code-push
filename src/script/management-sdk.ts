@@ -156,9 +156,10 @@ class AccountManager {
     }
 
     // Apps
-    public getApps(): Promise<App[]> {
-        return this._requestManager.get(urlEncode`/apps`)
-            .then((res: JsonResponse) => res.body.apps);
+    public async getApps(): Promise<App[]> {
+        const res: JsonResponse = await this._requestManager.get(urlEncode`/apps`);
+        const apps = await this._adapter.toLegacyApps(res.body);
+        return apps;
     }
 
     public async getApp(apiAppName: string): Promise<App> {
