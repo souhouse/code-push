@@ -247,9 +247,11 @@ class AccountManager {
         return null;
     }
 
-    public removeDeployment(appName: string, deploymentName: string): Promise<void> {
-        return this._requestManager.del(urlEncode`/apps/${this.appNameParam(appName)}/deployments/${deploymentName}`)
-            .then(() => null);
+    public async removeDeployment(apiAppName: string, deploymentName: string): Promise<void> {
+        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
+        await this._requestManager.del(urlEncode`/apps/${appOwner}/${appName}/deployments/${deploymentName}`);
+
+        return null;
     }
 
     public getDeploymentMetrics(appName: string, deploymentName: string): Promise<DeploymentMetrics> {
