@@ -211,10 +211,12 @@ class AccountManager {
     }
 
     // Deployments
-    public addDeployment(appName: string, deploymentName: string): Promise<Deployment> {
-        var deployment = <Deployment>{ name: deploymentName };
-        return this._requestManager.post(urlEncode`/apps/${this.appNameParam(appName)}/deployments/`, JSON.stringify(deployment), /*expectResponseBody=*/ true)
-            .then((res: JsonResponse) => res.body.deployment);
+    public async addDeployment(apiAppName: string, deploymentName: string): Promise<Deployment> {
+        const deployment = <Deployment>{ name: deploymentName };
+        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
+        const res = await this._requestManager.post(urlEncode`/apps/${appOwner}/${appName}/deployments/`, JSON.stringify(deployment), /*expectResponseBody=*/ true);
+
+        return this._adapter.toLegacyDeployment(res.body);
     }
 
     public clearDeploymentHistory(appName: string, deploymentName: string): Promise<void> {
