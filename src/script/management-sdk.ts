@@ -259,9 +259,11 @@ class AccountManager {
             .then((res: JsonResponse) => res.body.metrics);
     }
 
-    public getDeploymentHistory(appName: string, deploymentName: string): Promise<Package[]> {
-        return this._requestManager.get(urlEncode`/apps/${this.appNameParam(appName)}/deployments/${deploymentName}/history`)
-            .then((res: JsonResponse) => res.body.history);
+    public async getDeploymentHistory(apiAppName: string, deploymentName: string): Promise<Package[]> {
+        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
+        const res = await this._requestManager.get(urlEncode`/apps/${appOwner}/${appName}/deployments/${deploymentName}/releases`);
+
+        return this._adapter.toLegacyDeploymentHistory(res.body);
     }
 
     // public release(appName: string, deploymentName: string, filePath: string, targetBinaryVersion: string, updateMetadata: PackageInfo, uploadProgressCallback?: (progress: number) => void): Promise<Package> {

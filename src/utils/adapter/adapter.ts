@@ -110,6 +110,10 @@ class Adapter {
         };
     }
 
+    public toLegacyDeploymentHistory(releases: adapter_types.CodePushRelease[]): sdk_types.Package[] {
+        return releases.map((release) => this.releaseToPackage(release));
+    }
+
     private toLegacyRestApp(app: adapter_types.App, user: UserProfile, deployments: string[]): sdk_types.App {
         const isCurrentAccount: boolean = user.id === app.owner.id;
         const isNameAndDisplayNameSame: boolean = app.name === app.display_name;
@@ -157,31 +161,27 @@ class Adapter {
         return restDeployment;
     }
 
-    private releaseToPackage(storageRelease: adapter_types.CodePushRelease): sdk_types.Package {
-        if (!storageRelease) {
+    private releaseToPackage(apiGatewayRelease: adapter_types.CodePushRelease): sdk_types.Package {
+        if (!apiGatewayRelease) {
             return null;
         }
 
         const restRelease: sdk_types.Package = {
-            appVersion: storageRelease.target_binary_range,
-            blobUrl: storageRelease.blob_url,
-            isDisabled: storageRelease.is_disabled,
-            isMandatory: storageRelease.is_mandatory,
-            label: storageRelease.label,
-            packageHash: storageRelease.package_hash,
-            releasedByUserId: storageRelease.released_by,
-            releaseMethod: storageRelease.release_method,
-            rollout: storageRelease.rollout,
-            size: storageRelease.size,
-            uploadTime: storageRelease.upload_time
+            appVersion: apiGatewayRelease.target_binary_range,
+            blobUrl: apiGatewayRelease.blob_url,
+            isDisabled: apiGatewayRelease.is_disabled,
+            isMandatory: apiGatewayRelease.is_mandatory,
+            label: apiGatewayRelease.label,
+            packageHash: apiGatewayRelease.package_hash,
+            releasedByUserId: apiGatewayRelease.released_by,
+            releaseMethod: apiGatewayRelease.release_method,
+            rollout: apiGatewayRelease.rollout,
+            size: apiGatewayRelease.size,
+            uploadTime: apiGatewayRelease.upload_time
         };
 
-        if (storageRelease.diff_package_map) {
-            restRelease.diffPackageMap = storageRelease.diff_package_map;
-        }
-
-        if (restRelease.rollout === undefined || restRelease.rollout === null) {
-            restRelease.rollout = 100;
+        if (apiGatewayRelease.diff_package_map) {
+            restRelease.diffPackageMap = apiGatewayRelease.diff_package_map;
         }
 
         return restRelease;
