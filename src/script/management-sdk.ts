@@ -6,7 +6,7 @@ import * as yazl from "yazl";
 import Adapter from "../utils/adapter/adapter"
 import RequestManager from "../utils/request-manager"
 import { CodePushUnauthorizedError } from "../utils/code-push-error"
-import FileUploadClient from "appcenter-file-upload-client";
+import FileUploadClient, { IProgress } from "appcenter-file-upload-client";
 
 import { AccessKey, AccessKeyRequest, Account, App, AppCreationRequest, CollaboratorMap, CollaboratorProperties, Deployment, DeploymentMetrics, Headers, Package, PackageInfo, ServerAccessKey, Session, UpdateMetrics, ReleaseUploadAssets, UploadReleaseProperties } from "./types";
 
@@ -278,6 +278,11 @@ class AccountManager {
             assetDomain: assets.upload_domain,
             assetToken: assets.token,
             file: packageFile.path,
+            onProgressChanged: (progressData: IProgress) => {
+                if (uploadProgressCallback) {
+                    uploadProgressCallback(progressData.percentCompleted);
+                }
+            },
         });
 
         const releaseUploadProperties: UploadReleaseProperties = this._adapter.toReleaseUploadProperties(updateMetadata, assets, deploymentName);
