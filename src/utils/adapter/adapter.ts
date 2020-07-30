@@ -72,16 +72,22 @@ class Adapter {
     };
 
     public toReleaseUploadProperties(updateMetadata: sdk_types.PackageInfo, releaseUploadAssets: sdk_types.ReleaseUploadAssets, deploymentName: string): sdk_types.UploadReleaseProperties {
-        return {
+        const releaseUpload: sdk_types.UploadReleaseProperties = {
             release_upload: releaseUploadAssets,
             target_binary_version: updateMetadata.appVersion,
             deployment_name: deploymentName,
-            description: updateMetadata.description,
-            disabled: updateMetadata.isDisabled,
-            mandatory: updateMetadata.isMandatory,
             no_duplicate_release_error: false, // This property is not implemented in CodePush SDK Management
-            rollout: updateMetadata.rollout
         }
+
+        if (updateMetadata.description) releaseUpload.description = updateMetadata.description;
+
+        if (updateMetadata.isDisabled) releaseUpload.disabled = updateMetadata.isDisabled;
+
+        if (updateMetadata.isMandatory) releaseUpload.mandatory = updateMetadata.isMandatory;
+
+        if (updateMetadata.rollout) releaseUpload.rollout = updateMetadata.rollout;
+
+        return releaseUpload;
     }
 
     public toLegacyDeployment(deployment: adapter_types.Deployment): sdk_types.Deployment {
@@ -97,25 +103,15 @@ class Adapter {
             manifestBlobUrl: null, // Deprecated
         }
 
-        if (releasePackage.diff_package_map) {
-            sdkPackage.diffPackageMap = releasePackage.diff_package_map;
-        }
+        if (releasePackage.diff_package_map) sdkPackage.diffPackageMap = releasePackage.diff_package_map;
 
-        if (releasePackage.original_label) {
-            sdkPackage.originalLabel = releasePackage.original_label;
-        }
+        if (releasePackage.original_label) sdkPackage.originalLabel = releasePackage.original_label;
 
-        if (releasePackage.original_deployment) {
-            sdkPackage.originalDeployment = releasePackage.original_deployment;
-        }
+        if (releasePackage.original_deployment) sdkPackage.originalDeployment = releasePackage.original_deployment;
 
-        if(releasePackage.released_by) {
-            sdkPackage.releasedBy = releasePackage.released_by;
-        }
+        if (releasePackage.released_by) sdkPackage.releasedBy = releasePackage.released_by;
 
-        if (releasePackage.release_method) {
-            sdkPackage.releaseMethod = releasePackage.release_method;
-        }
+        if (releasePackage.release_method) sdkPackage.releaseMethod = releasePackage.release_method;
 
         return sdkPackage;
     }
