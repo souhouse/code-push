@@ -84,6 +84,10 @@ class Adapter {
         }
     }
 
+    public toLegacyDeployment(deployment: adapter_types.Deployment): sdk_types.Deployment {
+        return this.toLegacyRestDeployment(deployment);
+    };
+
     private toLegacyRestDeployments(apiGatewayDeployments: adapter_types.Deployment[]): sdk_types.Deployment[] {
         const deployments: sdk_types.Deployment[] = apiGatewayDeployments.map((deployment) => {
             return this.toLegacyRestDeployment(deployment, true);
