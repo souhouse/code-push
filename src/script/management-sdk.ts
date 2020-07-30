@@ -224,14 +224,18 @@ class AccountManager {
             .then(() => null);
     }
 
-    public getDeployments(appName: string): Promise<Deployment[]> {
-        return this._requestManager.get(urlEncode`/apps/${this.appNameParam(appName)}/deployments/`)
-            .then((res: JsonResponse) => this._adapter.toLegacyDeployments(res.body));
+    public async getDeployments(apiAppName: string): Promise<Deployment[]> {
+        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
+        const res: JsonResponse = await this._requestManager.get(urlEncode`/apps/${appOwner}/${this.appNameParam(appName)}/deployments/`);
+
+        return this._adapter.toLegacyDeployments(res.body);
     }
 
-    public getDeployment(appName: string, deploymentName: string): Promise<Deployment> {
-        return this._requestManager.get(urlEncode`/apps/${this.appNameParam(appName)}/deployments/${deploymentName}`)
-            .then((res: JsonResponse) => res.body.deployment);
+    public async getDeployment(apiAppName: string, deploymentName: string): Promise<Deployment> {
+        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
+        const res: JsonResponse = await this._requestManager.get(urlEncode`/apps/${appOwner}/${this.appNameParam(appName)}/deployments/${deploymentName}`);
+
+        return this._adapter.toLegacyDeployment(res.body);
     }
 
     public renameDeployment(appName: string, oldDeploymentName: string, newDeploymentName: string): Promise<void> {
