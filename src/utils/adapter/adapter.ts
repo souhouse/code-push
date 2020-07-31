@@ -99,9 +99,21 @@ class Adapter {
             blobUrl: releasePackage.blob_url,
             size: releasePackage.size,
             uploadTime: releasePackage.upload_time,
-            releasedByUserId: null, // Deprecated
-            manifestBlobUrl: null, // Deprecated
+            isDisabled: !!releasePackage.is_disabled,
+            isMandatory: !!releasePackage.is_mandatory,
         }
+
+        console.log(JSON.stringify(releasePackage));
+
+        if (releasePackage.target_binary_range) sdkPackage.appVersion = releasePackage.target_binary_range;
+
+        if (releasePackage.description) sdkPackage.description = releasePackage.description;
+
+        if (releasePackage.label) sdkPackage.label = releasePackage.label;
+
+        if (releasePackage.package_hash) sdkPackage.packageHash = releasePackage.package_hash;
+
+        if (releasePackage.rollout) sdkPackage.rollout = releasePackage.rollout;
 
         if (releasePackage.diff_package_map) sdkPackage.diffPackageMap = releasePackage.diff_package_map;
 

@@ -153,8 +153,8 @@ export interface Package extends PackageInfo {
   /*generated*/ releaseMethod?: string; // "Upload", "Promote" or "Rollback". Unknown if unspecified
   /*generated*/ size: number;
   /*generated*/ uploadTime: number;
-  releasedByUserId: string;
-  manifestBlobUrl: string;
+  releasedByUserId?: string;
+  manifestBlobUrl?: string;
 }
 
 export interface CodePushError {
