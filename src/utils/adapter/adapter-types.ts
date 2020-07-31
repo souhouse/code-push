@@ -181,6 +181,12 @@ export interface CodePushRelease {
   diff_package_map?: PackageHashToBlobInfoMap;
 }
 
+
+export interface UpdatedApp {
+  name: string;
+  display_name?: string;
+}
+
 export interface ApigatewayAppCreationRequest {
   org: string,
   appcenterClientApp: App

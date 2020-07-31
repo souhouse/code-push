@@ -194,9 +194,12 @@ class AccountManager {
         return null;
     }
 
-    public renameApp(oldAppName: string, newAppName: string): Promise<void> {
-        return this._requestManager.patch(urlEncode`/apps/${this.appNameParam(oldAppName)}`, JSON.stringify({ name: newAppName }))
-            .then(() => null);
+    public async renameApp(oldAppName: string, newAppName: string): Promise<void> {
+        const { appOwner, appName } = await this._adapter.parseApiAppName(oldAppName);
+        const updatedApp = await this._adapter.getRenamedApp(newAppName, appOwner, appName);
+
+        await this._requestManager.patch(urlEncode`/apps/${appOwner}/${appName}`, JSON.stringify(updatedApp));
+        return null;
     }
 
     // Deprecated

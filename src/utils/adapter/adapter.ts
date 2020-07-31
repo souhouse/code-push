@@ -115,13 +115,38 @@ class Adapter {
         const deploymentsToCreate = ['Staging', 'Production'];
         await Promise.all(
             deploymentsToCreate.map(async (deploymentName) => {
-            const deployment = <sdk_types.Deployment>{ name: deploymentName };
+                const deployment = <sdk_types.Deployment>{ name: deploymentName };
                 return await this._requestManager.post(`/apps/${appOwner}/${appName}/deployments/`, JSON.stringify(deployment), /*expectResponseBody=*/ true);
             })
         );
 
         return;
     };
+
+    public async getRenamedApp(newName: string, appOwner: string, oldName: string): Promise<adapter_types.UpdatedApp> {
+        const app = await this.getApp(appOwner, oldName);
+
+        if (newName.indexOf('/') !== -1) {
+            throw this.getCodePushError(`The new app name "${newName}" must be unqualified, not having a '/' character.`, RequestManager.ERROR_CONFLICT);
+        }
+
+        if (!this.isValidAppCenterAppName(newName)) {
+            throw this.getCodePushError(`The app name "${newName}" isn't valid. It can only contain alphanumeric characters, dashes, periods, or underscores.`, RequestManager.ERROR_CONFLICT);
+        }
+
+        // If the display name was set on the existing app, then it was different than the app name. In that case, leave the display name unchanged;
+        // the user can change the display name through the Mobile Center web portal if they want to rename it.
+        // But if the display name and app name were the same, then rename them both.
+        const updatedApp =
+            app.name === app.display_name
+                ? {
+                    name: newName,
+                    display_name: newName
+                }
+                : { name: newName };
+
+        return updatedApp;
+    }
 
     public toLegacyDeployments(deployments: adapter_types.Deployment[]): sdk_types.Deployment[] {
         deployments.sort((first: adapter_types.Deployment, second: adapter_types.Deployment) => {
@@ -231,6 +256,15 @@ class Adapter {
     private async getUser(): Promise<adapter_types.UserProfile> {
         try {
             const res = await this._requestManager.get(`/user`);
+            return res.body;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    private async getApp(appOwner: string, appName: string): Promise<adapter_types.App> {
+        try {
+            const res = await this._requestManager.get(`/apps/${appOwner}/${appName}`);
             return res.body;
         } catch (error) {
             throw error;
