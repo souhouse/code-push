@@ -221,9 +221,11 @@ class AccountManager {
         return this._adapter.toLegacyDeployment(res.body);
     }
 
-    public clearDeploymentHistory(appName: string, deploymentName: string): Promise<void> {
-        return this._requestManager.del(urlEncode`/apps/${this.appNameParam(appName)}/deployments/${deploymentName}/history`)
-            .then(() => null);
+    public async clearDeploymentHistory(apiAppName: string, deploymentName: string): Promise<void> {
+        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
+        await this._requestManager.del(urlEncode`/apps/${appOwner}/${appName}/deployments/${deploymentName}/releases`);
+
+        return null;
     }
 
     public async getDeployments(apiAppName: string): Promise<Deployment[]> {
