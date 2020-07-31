@@ -139,7 +139,7 @@ class AccountManager {
 
     public async removeAccessKey(name: string): Promise<void> {
         await this._requestManager.del(urlEncode`/accessKeys/${name}`);
-        return;
+        return null;
     }
 
     // Deprecated
@@ -180,9 +180,10 @@ class AccountManager {
             .then(() => app);
     }
 
-    public removeApp(appName: string): Promise<void> {
-        return this._requestManager.del(urlEncode`/apps/${this.appNameParam(appName)}`)
-            .then(() => null);
+    public async removeApp(apiAppName: string): Promise<void> {
+        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
+        await this._requestManager.del(urlEncode`/apps/${appOwner}/${appName}`);
+        return null;
     }
 
     public renameApp(oldAppName: string, newAppName: string): Promise<void> {
