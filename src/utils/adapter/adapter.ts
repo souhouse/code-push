@@ -82,6 +82,47 @@ class Adapter {
         return legacyApps;
     };
 
+    public toApigatewayAppCreationRequest(appToCreate: sdk_types.AppCreationRequest): adapter_types.ApigatewayAppCreationRequest {
+        if (
+            appToCreate.os !== 'iOS' &&
+            appToCreate.os !== 'Android' &&
+            appToCreate.os !== 'Windows' &&
+            appToCreate.os !== 'Linux'
+        ) {
+            throw this.getCodePushError(`The app OS "${appToCreate.os}" isn't valid. It should be "iOS", "Android", "Windows" or "Linux".`, RequestManager.ERROR_CONFLICT);
+        }
+
+        if (
+            appToCreate.platform !== 'React-Native' &&
+            appToCreate.platform !== 'Cordova' &&
+            appToCreate.platform !== 'Electron'
+        ) {
+            throw this.getCodePushError(`The app platform "${appToCreate.platform}" isn't valid. It should be "React-Native", "Cordova" or "Electron".`, RequestManager.ERROR_CONFLICT);
+        }
+
+        const org: string = this.getOrgFromLegacyAppRequest(appToCreate);
+        const appcenterClientApp: adapter_types.App = this.toAppcenterClientApp(appToCreate);
+
+        if (!this.isValidAppCenterAppName(appcenterClientApp.display_name)) {
+            throw this.getCodePushError(`The app name "${appcenterClientApp.display_name}" isn't valid. It can only contain alphanumeric characters, dashes, periods, or underscores.`, RequestManager.ERROR_CONFLICT);
+        }
+
+        return { org, appcenterClientApp };
+    }
+
+    public async addStandardDeployments(apiAppName: string): Promise<void> {
+        const { appOwner, appName } = await this.parseApiAppName(apiAppName);
+        const deploymentsToCreate = ['Staging', 'Production'];
+        await Promise.all(
+            deploymentsToCreate.map(async (deploymentName) => {
+            const deployment = <sdk_types.Deployment>{ name: deploymentName };
+                return await this._requestManager.post(`/apps/${appOwner}/${appName}/deployments/`, JSON.stringify(deployment), /*expectResponseBody=*/ true);
+            })
+        );
+
+        return;
+    };
+
     public toLegacyDeployments(deployments: adapter_types.Deployment[]): sdk_types.Deployment[] {
         deployments.sort((first: adapter_types.Deployment, second: adapter_types.Deployment) => {
             return first.name.localeCompare(second.name);
@@ -203,6 +244,51 @@ class Adapter {
         } catch (error) {
             throw error;
         }
+    }
+
+    private getOrgFromLegacyAppRequest(legacyCreateAppRequest: sdk_types.AppCreationRequest) {
+        const slashIndex = legacyCreateAppRequest.name.indexOf('/');
+        const org = slashIndex !== -1 ? legacyCreateAppRequest.name.substring(0, slashIndex) : null;
+
+        return org;
+    }
+
+    private toAppcenterClientApp(legacyCreateAppRequest: sdk_types.AppCreationRequest): adapter_types.App {
+        // If the app name contains a slash, then assume that the app is intended to be owned by an org, with the org name
+        // before the slash. Update the app info accordingly.
+        const slashIndex = legacyCreateAppRequest.name.indexOf('/');
+
+        return {
+            os: legacyCreateAppRequest.os as adapter_types.AppOs,
+            platform: legacyCreateAppRequest.platform as adapter_types.AppPlatform,
+            display_name:
+                slashIndex !== -1 ? legacyCreateAppRequest.name.substring(slashIndex + 1) : legacyCreateAppRequest.name
+        };
+    }
+
+    private isValidAppCenterAppName(name: any): boolean {
+        return this.getStringValidator(/*maxLength=*/ 1000, /*minLength=*/ 1)(name) && /^[a-zA-Z0-9-._]+$/.test(name); // Only allow alphanumeric characters, dashes, periods, or underscores
+    }
+
+    private getStringValidator(maxLength: number = 1000, minLength: number = 0): (value: any) => boolean {
+        return function isValidString(value: string): boolean {
+            if (typeof value !== 'string') {
+                return false;
+            }
+
+            if (maxLength > 0 && value.length > maxLength) {
+                return false;
+            }
+
+            return value.length >= minLength;
+        };
+    }
+
+    private getCodePushError(message: string, errorCode: number): sdk_types.CodePushError {
+        return {
+            message: message,
+            statusCode: errorCode
+        };
     }
 }
 

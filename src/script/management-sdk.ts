@@ -169,15 +169,23 @@ class AccountManager {
         return app;
     }
 
-    public addApp(appName: string, appOs: string, appPlatform: string, manuallyProvisionDeployments: boolean = false): Promise<App> {
+    public async addApp(appName: string, appOs: string, appPlatform: string, manuallyProvisionDeployments: boolean = false): Promise<App> {
         var app: AppCreationRequest = {
             name: appName,
             os: appOs,
             platform: appPlatform,
             manuallyProvisionDeployments: manuallyProvisionDeployments
         };
-        return this._requestManager.post(urlEncode`/apps/`, JSON.stringify(app), /*expectResponseBody=*/ false)
-            .then(() => app);
+
+        const apigatewayAppCreationRequest = this._adapter.toApigatewayAppCreationRequest(app);
+
+        const path = apigatewayAppCreationRequest.org ? `/orgs/${apigatewayAppCreationRequest.org}/apps` : `/apps`;
+        await this._requestManager.post(path, JSON.stringify(apigatewayAppCreationRequest.appcenterClientApp), /*expectResponseBody=*/ false);
+
+        if (!manuallyProvisionDeployments) {
+            await this._adapter.addStandardDeployments(appName);
+        }
+        return app;
     }
 
     public async removeApp(apiAppName: string): Promise<void> {

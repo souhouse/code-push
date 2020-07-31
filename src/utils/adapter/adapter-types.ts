@@ -180,6 +180,11 @@ export interface CodePushRelease {
   size: number;
   diff_package_map?: PackageHashToBlobInfoMap;
 }
+
+export interface ApigatewayAppCreationRequest {
+  org: string,
+  appcenterClientApp: App
+}
 export interface apiAppParams {
   appOwner: string;
   appName: string;
