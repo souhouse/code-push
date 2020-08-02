@@ -219,7 +219,8 @@ describe("Management SDK", () => {
     });
 
     it("getDeployments handles JSON response", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ deployments: [] }), 200);
+        mockReturn(JSON.stringify([testDeployment, testDeployment2]), 200);
+        mockUser();
 
         manager.getDeployments("appName")
             .then((obj: any) => {
