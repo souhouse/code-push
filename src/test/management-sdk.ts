@@ -32,6 +32,15 @@ const testApp: adapterTypes.App = {
     owner: { ...testUser, type: "user" }
 }
 
+const codePushRelease: adapterTypes.CodePushRelease = {
+    releasedByUserId: "testUserID",
+    manifestBlobUrl: "testManifestBlobUrl",
+    target_binary_range: "testTargetBinaryRange",
+    upload_time: 123456789,
+    blob_url: "testBlobUrl",
+    size: 123456789
+}
+
 describe("Management SDK", () => {
 
     beforeEach(() => {
@@ -251,7 +260,7 @@ describe("Management SDK", () => {
     });
 
     it("getDeploymentHistory handles success response with no packages", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ history: [] }), 200);
+        mockReturn(JSON.stringify([]), 200);
         mockUser();
 
         manager.getDeploymentHistory("appName", "deploymentName")
@@ -263,7 +272,10 @@ describe("Management SDK", () => {
     });
 
     it("getDeploymentHistory handles success response with two packages", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ history: [{ label: "v1" }, { label: "v2" }] }), 200);
+        const release: adapterTypes.CodePushRelease = {...codePushRelease, label: "v1" };
+        const release2: adapterTypes.CodePushRelease = {...codePushRelease, label: "v2" };
+
+        mockReturn(JSON.stringify([release, release2]), 200);
         mockUser();
 
         manager.getDeploymentHistory("appName", "deploymentName")
