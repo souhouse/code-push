@@ -179,6 +179,7 @@ describe("Management SDK", () => {
 
     it("removeApp handles success response", (done: MochaDone) => {
         mockReturn("", 200);
+        mockUser();
 
         manager.removeApp("appName")
             .then((obj: any) => {
@@ -208,6 +209,7 @@ describe("Management SDK", () => {
 
     it("getDeployment handles JSON response", (done: MochaDone) => {
         mockReturn(JSON.stringify({ deployment: {} }), 200);
+        mockUser();
 
         manager.getDeployment("appName", "deploymentName")
             .then((obj: any) => {
@@ -238,6 +240,7 @@ describe("Management SDK", () => {
 
     it("removeDeployment handles success response", (done: MochaDone) => {
         mockReturn("", 200);
+        mockUser();
 
         manager.removeDeployment("appName", "deploymentName")
             .then((obj: any) => {
@@ -248,6 +251,7 @@ describe("Management SDK", () => {
 
     it("getDeploymentHistory handles success response with no packages", (done: MochaDone) => {
         mockReturn(JSON.stringify({ history: [] }), 200);
+        mockUser();
 
         manager.getDeploymentHistory("appName", "deploymentName")
             .then((obj: any) => {
@@ -259,6 +263,7 @@ describe("Management SDK", () => {
 
     it("getDeploymentHistory handles success response with two packages", (done: MochaDone) => {
         mockReturn(JSON.stringify({ history: [{ label: "v1" }, { label: "v2" }] }), 200);
+        mockUser();
 
         manager.getDeploymentHistory("appName", "deploymentName")
             .then((obj: any) => {
@@ -281,6 +286,7 @@ describe("Management SDK", () => {
 
     it("clearDeploymentHistory handles success response", (done: MochaDone) => {
         mockReturn("", 204);
+        mockUser();
 
         manager.clearDeploymentHistory("appName", "deploymentName")
             .then((obj: any) => {
