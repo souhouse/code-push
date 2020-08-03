@@ -1,7 +1,6 @@
 import * as adapter_types from "./adapter-types";
 import * as sdk_types from "../../script/types";
 import RequestManager from "../request-manager";
-import { UserProfile } from "./adapter-types";
 
 class Adapter {
     constructor(private readonly _requestManager: RequestManager) { }
@@ -160,6 +159,21 @@ class Adapter {
         return this.toLegacyRestDeployment(deployment);
     };
 
+    public async toLegacyCollaborators(
+        userList: adapter_types.UserProfile[],
+        appOwner: string,
+    ): Promise<sdk_types.CollaboratorMap> {
+        const callingUser = await this.getUser();
+        const legacyCollaborators: sdk_types.CollaboratorMap = {};
+        userList.forEach((user) => {
+            legacyCollaborators[user.email] = {
+                isCurrentAccount: callingUser.email === user.email,
+                permission: this.toLegacyUserPermission(user.permissions[0], user.name && user.name === appOwner)
+            };
+        });
+        return legacyCollaborators;
+    }
+
     public async parseApiAppName(apiAppName: string): Promise<adapter_types.apiAppParams> {
         const callingUser = await this.getUser();
         // If the separating / is not included, assume the owner is the calling user and only the app name is provided
@@ -180,7 +194,7 @@ class Adapter {
         return releases.map((release) => this.releaseToPackage(release));
     }
 
-    private toLegacyRestApp(app: adapter_types.App, user: UserProfile, deployments: string[]): sdk_types.App {
+    private toLegacyRestApp(app: adapter_types.App, user: adapter_types.UserProfile, deployments: string[]): sdk_types.App {
         const isCurrentAccount: boolean = user.id === app.owner.id;
         const isNameAndDisplayNameSame: boolean = app.name === app.display_name;
 
@@ -278,6 +292,15 @@ class Adapter {
         } catch (error) {
             throw error;
         }
+    }
+
+    private toLegacyUserPermission(expectedPermission: adapter_types.AppMemberPermissions, isOwner: boolean): string {
+        if (expectedPermission === 'manager') {
+            return isOwner ? 'Owner' : 'Manager';
+        } else if (expectedPermission === 'developer') {
+            return 'Collaborator';
+        }
+        return 'Reader';
     }
 
     private getOrgFromLegacyAppRequest(legacyCreateAppRequest: sdk_types.AppCreationRequest) {

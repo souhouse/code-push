@@ -210,9 +210,12 @@ class AccountManager {
     }
 
     // Collaborators
-    public getCollaborators(appName: string): Promise<CollaboratorMap> {
-        return this._requestManager.get(urlEncode`/apps/${this.appNameParam(appName)}/collaborators`)
-            .then((res: JsonResponse) => res.body.collaborators);
+    public async getCollaborators(apiAppName: string): Promise<CollaboratorMap> {
+        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
+
+        const res: JsonResponse = await this._requestManager.get(urlEncode`/apps/${appOwner}/${appName}/users`);
+        const collaborators = await this._adapter.toLegacyCollaborators(res.body, appOwner);
+        return collaborators;
     }
 
     public addCollaborator(appName: string, email: string): Promise<void> {
