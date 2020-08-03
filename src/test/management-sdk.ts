@@ -57,7 +57,7 @@ describe("Management SDK", () => {
         mockReturn("Text", 404);
 
         var methodsWithErrorHandling: any[] = [
-            manager.addApp.bind(manager, "appName", "appOs", "appPlatform"),
+            manager.addApp.bind(manager, "appName", "iOS", "Cordova"),
             manager.getApp.bind(manager, "appName"),
             manager.renameApp.bind(manager, "appName", {}),
             manager.removeApp.bind(manager, "appName"),
