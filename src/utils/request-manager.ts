@@ -115,7 +115,7 @@ class RequestManager {
     }
 
     private getErrorMessage(error: Error, response?: superagent.Response): string {
-        return response && response.text ? response.text : error.message;
+        return response && response.body.message ? response.body.message : error.message;
     }
 
     private attachCredentials(request: superagent.Request): void {
