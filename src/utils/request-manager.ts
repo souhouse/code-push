@@ -33,8 +33,8 @@ class RequestManager {
         this._proxy = proxy;
     }
 
-    public get(endpoint: string, expectResponseBody: boolean = true): Promise<JsonResponse> {
-        return this.makeApiRequest("get", endpoint, /*requestBody=*/ null, expectResponseBody, /*contentType=*/ null);
+    public get(endpoint: string, expectResponseBody: boolean = true, throwIfUnauthorized: boolean = true): Promise<JsonResponse> {
+        return this.makeApiRequest("get", endpoint, /*requestBody=*/ null, expectResponseBody, /*contentType=*/ null, throwIfUnauthorized);
     }
 
     public post(endpoint: string, requestBody: string, expectResponseBody: boolean, contentType: string = "application/json;charset=UTF-8"): Promise<JsonResponse> {
@@ -49,8 +49,8 @@ class RequestManager {
         return this.makeApiRequest("del", endpoint, /*requestBody=*/ null, expectResponseBody, /*contentType=*/ null)
     }
 
-    private makeApiRequest(method: string, endpoint: string, requestBody: string, expectResponseBody: boolean, contentType: string): Promise<JsonResponse> {
-        return new Promise<JsonResponse>((resolve, reject) => {
+    private makeApiRequest(method: string, endpoint: string, requestBody: string, expectResponseBody: boolean, contentType: string, throwIfUnauthorized: boolean = true): Promise<JsonResponse> {
+        return new Promise<any>((resolve, reject) => {
             var request: superagent.Request = (<any>superagent)[method](this._serverUrl + endpoint);
             if (this._proxy) (<any>request).proxy(this._proxy);
             this.attachCredentials(request);
@@ -65,8 +65,13 @@ class RequestManager {
 
             request.end((err: any, res: superagent.Response) => {
                 if (err) {
-                    reject(this.getCodePushError(err, res));
-                    return;
+                    if (throwIfUnauthorized) {
+                        reject(this.getCodePushError(err, res));
+                        return;
+                    } else {
+                        resolve(false);
+                        return;
+                    }
                 }
 
                 try {
