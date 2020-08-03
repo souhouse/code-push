@@ -38,6 +38,7 @@ class AccountManager {
         OWNER: "Owner",
         COLLABORATOR: "Collaborator"
     };
+    public static ERROR_UNAUTHORIZED = 401;
 
     private _accessKey: string;
     private _requestManager: RequestManager;
@@ -65,7 +66,7 @@ class AccountManager {
 
     public async isAuthenticated(throwIfUnauthorized?: boolean): Promise<boolean> {
         const res: JsonResponse = await this._requestManager.get(urlEncode`/user`, false, throwIfUnauthorized);
-        const authenticated: boolean = !!res.body;
+        const authenticated: boolean = !!res && !!res.body;
 
         return authenticated;
     }

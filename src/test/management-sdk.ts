@@ -1,10 +1,46 @@
 import assert from "assert";
 
 import AccountManager = require("../script/management-sdk");
+import adapterTypes = require("../utils/adapter/adapter-types");
 
 var request = require("superagent");
 
 var manager: AccountManager;
+
+const testUser: adapterTypes.UserProfile = {
+    id: "testId",
+    avatar_url: "testAvatarUrl",
+    can_change_password: false,
+    display_name: "testDisplayName",
+    email: "testEmail",
+    name: "testUserName"
+}
+
+const testDeployment: adapterTypes.Deployment = {
+    createdTime: 123,
+    name: "testDeployment1",
+    key: "testKey1"
+};
+
+const testDeployment2: adapterTypes.Deployment = {
+    createdTime: 123,
+    name: "testDeployment2",
+    key: "testKey2"
+};
+const testApp: adapterTypes.App = {
+    name: "testAppName",
+    owner: { ...testUser, type: "user" }
+}
+
+const codePushRelease: adapterTypes.CodePushRelease = {
+    releasedByUserId: "testUserID",
+    manifestBlobUrl: "testManifestBlobUrl",
+    target_binary_range: "testTargetBinaryRange",
+    upload_time: 123456789,
+    blob_url: "testBlobUrl",
+    size: 123456789
+}
+
 describe("Management SDK", () => {
 
     beforeEach(() => {
@@ -68,7 +104,7 @@ describe("Management SDK", () => {
     });
 
     it("isAuthenticated handles successful auth", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ authenticated: true }), 200, {});
+        mockReturn(JSON.stringify({ authenticated: true }), 200);
         manager.isAuthenticated()
             .then((authenticated: boolean) => {
                 assert(authenticated, "Should be authenticated");
@@ -77,7 +113,7 @@ describe("Management SDK", () => {
     });
 
     it("isAuthenticated handles unsuccessful auth", (done: MochaDone) => {
-        mockReturn("Unauthorized", 401, {});
+        mockReturn("Unauthorized", 401);
         manager.isAuthenticated()
             .then((authenticated: boolean) => {
                 assert(!authenticated, "Should not be authenticated");
@@ -86,7 +122,7 @@ describe("Management SDK", () => {
     });
 
     it("isAuthenticated handles unsuccessful auth with promise rejection", (done: MochaDone) => {
-        mockReturn("Unauthorized", 401, {});
+        mockReturn("Unauthorized", 401);
 
         // use optional parameter to ask for rejection of the promise if not authenticated
         manager.isAuthenticated(true)
@@ -100,7 +136,7 @@ describe("Management SDK", () => {
     });
 
     it("isAuthenticated handles unexpected status codes", (done: MochaDone) => {
-        mockReturn("Not Found", 404, {});
+        mockReturn("Not Found", 404);
         manager.isAuthenticated()
             .then((authenticated: boolean) => {
                 assert.fail("isAuthenticated should have rejected the promise");
@@ -112,7 +148,7 @@ describe("Management SDK", () => {
     });
 
     it("addApp handles successful response", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ success: true }), 201, { location: "/appName" });
+        mockReturn(JSON.stringify({ success: true }), 201, null, { location: "/appName" });
         manager.addApp("appName", "iOS", "React-Native")
             .then((obj) => {
                 assert.ok(obj);
@@ -121,7 +157,7 @@ describe("Management SDK", () => {
     });
 
     it("addApp handles error response", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ success: false }), 404, {});
+        mockReturn(JSON.stringify({ success: false }), 404);
         manager.addApp("appName", "iOS", "React-Native")
             .then((obj) => {
                 throw new Error("Call should not complete successfully");
@@ -129,7 +165,9 @@ describe("Management SDK", () => {
     });
 
     it("getApp handles JSON response", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ app: {} }), 200, {});
+        mockReturn(JSON.stringify(testApp), 200);
+        mockUser();
+        mockReturn(JSON.stringify([testDeployment, testDeployment2]), 200, `/apps/${testUser.name}/${testApp.name}/deployments/`)
 
         manager.getApp("appName")
             .then((obj: any) => {
@@ -139,7 +177,7 @@ describe("Management SDK", () => {
     });
 
     it("updateApp handles success response", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ apps: [] }), 200, {});
+        mockReturn(JSON.stringify({ apps: [] }), 200);
 
         manager.renameApp("appName", "newAppName")
             .then((obj: any) => {
@@ -149,7 +187,8 @@ describe("Management SDK", () => {
     });
 
     it("removeApp handles success response", (done: MochaDone) => {
-        mockReturn("", 200, {});
+        mockReturn("", 200);
+        mockUser();
 
         manager.removeApp("appName")
             .then((obj: any) => {
@@ -168,7 +207,7 @@ describe("Management SDK", () => {
     });
 
     it("addDeployment handles success response", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ deployment: { name: "name", key: "key" } }), 201, { location: "/deploymentName" });
+        mockReturn(JSON.stringify({ deployment: { name: "name", key: "key" } }), 201, null, { location: "/deploymentName" });
 
         manager.addDeployment("appName", "deploymentName")
             .then((obj: any) => {
@@ -178,7 +217,8 @@ describe("Management SDK", () => {
     });
 
     it("getDeployment handles JSON response", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ deployment: {} }), 200, {});
+        mockReturn(JSON.stringify({ deployment: {} }), 200);
+        mockUser();
 
         manager.getDeployment("appName", "deploymentName")
             .then((obj: any) => {
@@ -188,7 +228,8 @@ describe("Management SDK", () => {
     });
 
     it("getDeployments handles JSON response", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ deployments: [] }), 200, {});
+        mockReturn(JSON.stringify([testDeployment, testDeployment2]), 200);
+        mockUser();
 
         manager.getDeployments("appName")
             .then((obj: any) => {
@@ -198,7 +239,7 @@ describe("Management SDK", () => {
     });
 
     it("renameDeployment handles success response", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ apps: [] }), 200, {});
+        mockReturn(JSON.stringify({ apps: [] }), 200);
 
         manager.renameDeployment("appName", "deploymentName", "newDeploymentName")
             .then((obj: any) => {
@@ -208,7 +249,8 @@ describe("Management SDK", () => {
     });
 
     it("removeDeployment handles success response", (done: MochaDone) => {
-        mockReturn("", 200, {});
+        mockReturn("", 200);
+        mockUser();
 
         manager.removeDeployment("appName", "deploymentName")
             .then((obj: any) => {
@@ -218,7 +260,8 @@ describe("Management SDK", () => {
     });
 
     it("getDeploymentHistory handles success response with no packages", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ history: [] }), 200);
+        mockReturn(JSON.stringify([]), 200);
+        mockUser();
 
         manager.getDeploymentHistory("appName", "deploymentName")
             .then((obj: any) => {
@@ -229,7 +272,11 @@ describe("Management SDK", () => {
     });
 
     it("getDeploymentHistory handles success response with two packages", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ history: [{ label: "v1" }, { label: "v2" }] }), 200);
+        const release: adapterTypes.CodePushRelease = {...codePushRelease, label: "v1" };
+        const release2: adapterTypes.CodePushRelease = {...codePushRelease, label: "v2" };
+
+        mockReturn(JSON.stringify([release, release2]), 200);
+        mockUser();
 
         manager.getDeploymentHistory("appName", "deploymentName")
             .then((obj: any) => {
@@ -252,6 +299,7 @@ describe("Management SDK", () => {
 
     it("clearDeploymentHistory handles success response", (done: MochaDone) => {
         mockReturn("", 204);
+        mockUser();
 
         manager.clearDeploymentHistory("appName", "deploymentName")
             .then((obj: any) => {
@@ -270,7 +318,7 @@ describe("Management SDK", () => {
     });
 
     it("addCollaborator handles successful response", (done: MochaDone) => {
-        mockReturn("", 201, { location: "/collaborators" });
+        mockReturn("", 201, null, { location: "/collaborators" });
         manager.addCollaborator("appName", "email1")
             .then(
                 () => done(),
@@ -279,7 +327,7 @@ describe("Management SDK", () => {
     });
 
     it("addCollaborator handles error response", (done: MochaDone) => {
-        mockReturn("", 404, {});
+        mockReturn("", 404);
         manager.addCollaborator("appName", "email1")
             .then(
                 () => { throw new Error("Call should not complete successfully") },
@@ -316,7 +364,7 @@ describe("Management SDK", () => {
     });
 
     it("removeCollaborator handles success response", (done: MochaDone) => {
-        mockReturn("", 200, {});
+        mockReturn("", 200);
 
         manager.removeCollaborator("appName", "email1")
             .then((obj: any) => {
@@ -389,10 +437,14 @@ function rejectHandler(val: any): void {
     assert.fail();
 }
 
+function mockUser(): void {
+    mockReturn(JSON.stringify(testUser), 200, "/user");
+}
+
 // Wrapper for superagent-mock that abstracts away information not needed for SDK tests
-function mockReturn(bodyText: string, statusCode: number, header = {}): void {
+function mockReturn(bodyText: string, statusCode: number, pattern?: string, header = {}): void {
     require("superagent-mock")(request, [{
-        pattern: "http://localhost/(\\w+)/?",
+        pattern: "http://localhost" + (pattern ? pattern : "/(\\w+)/?"),
         fixtures: function (match: any, params: any): any {
             var isOk = statusCode >= 200 && statusCode < 300;
             if (!isOk) {
