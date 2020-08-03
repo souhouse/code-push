@@ -1,11 +1,11 @@
-import * as adapter_types from "./adapter-types";
-import * as sdk_types from "../../script/types";
+import * as adapterTypes from "./adapter-types";
+import * as sdkTypes from "../../script/types";
 import RequestManager from "../request-manager";
 
 class Adapter {
     constructor(private readonly _requestManager: RequestManager) { }
 
-    public toLegacyAccount(profile: adapter_types.UserProfile): sdk_types.Account {
+    public toLegacyAccount(profile: adapterTypes.UserProfile): sdkTypes.Account {
         return {
             name: profile.name,
             email: profile.email,
@@ -13,8 +13,8 @@ class Adapter {
         };
     }
 
-    public toLegacyAccessKey(apiToken: adapter_types.ApiToken): sdk_types.AccessKey {
-        const accessKey: sdk_types.AccessKey = {
+    public toLegacyAccessKey(apiToken: adapterTypes.ApiToken): sdkTypes.AccessKey {
+        const accessKey: sdkTypes.AccessKey = {
             createdTime: Date.parse(apiToken.created_at),
             expires: Date.parse('9999-12-31T23:59:59'), // never,
             key: apiToken.api_token,
@@ -24,10 +24,10 @@ class Adapter {
         return accessKey;
     }
 
-    public toLegacyAccessKeyList(apiTokens: adapter_types.ApiTokensGetResponse[]): sdk_types.AccessKey[] {
+    public toLegacyAccessKeyList(apiTokens: adapterTypes.ApiTokensGetResponse[]): sdkTypes.AccessKey[] {
         console.log(apiTokens);
-        const accessKeyList: sdk_types.AccessKey[] = apiTokens.map((apiToken) => {
-            const accessKey: sdk_types.AccessKey = {
+        const accessKeyList: sdkTypes.AccessKey[] = apiTokens.map((apiToken) => {
+            const accessKey: sdkTypes.AccessKey = {
                 createdTime: Date.parse(apiToken.created_at),
                 expires: Date.parse('9999-12-31T23:59:59'), // never,
                 name: apiToken.description,
@@ -37,7 +37,7 @@ class Adapter {
         });
 
         accessKeyList.sort(
-            (first: sdk_types.AccessKey, second: sdk_types.AccessKey) => {
+            (first: sdkTypes.AccessKey, second: sdkTypes.AccessKey) => {
                 const firstTime = first.createdTime || 0;
                 const secondTime = second.createdTime || 0;
                 return firstTime - secondTime;
@@ -47,16 +47,16 @@ class Adapter {
         return accessKeyList;
     }
 
-    public async toLegacyApp(app: adapter_types.App): Promise<sdk_types.App> {
+    public async toLegacyApp(app: adapterTypes.App): Promise<sdkTypes.App> {
         const [user, deployments] = await Promise.all([this.getUser(), this.getDeployments(app.owner.name, app.name)]);
-        const deploymentsNames = deployments.map((deployment: adapter_types.Deployment) => deployment.name);
+        const deploymentsNames = deployments.map((deployment: adapterTypes.Deployment) => deployment.name);
         return this.toLegacyRestApp(app, user, deploymentsNames);
     };
 
-    public async toLegacyApps(apps: adapter_types.App[]): Promise<sdk_types.App[]> {
+    public async toLegacyApps(apps: adapterTypes.App[]): Promise<sdkTypes.App[]> {
         const user = await this.getUser();
         const sortedApps = await Promise.all(
-            apps.sort((first: adapter_types.App, second: adapter_types.App) => {
+            apps.sort((first: adapterTypes.App, second: adapterTypes.App) => {
                 const firstOwner = first.owner.name || '';
                 const secondOwner = second.owner.name || '';
 
@@ -71,8 +71,8 @@ class Adapter {
 
         const legacyApps = await Promise.all(
             sortedApps.map(async (app) => {
-                const deployments: adapter_types.Deployment[] = await this.getDeployments(app.owner.name, app.name);
-                const deploymentsNames = deployments.map((deployment: adapter_types.Deployment) => deployment.name);
+                const deployments: adapterTypes.Deployment[] = await this.getDeployments(app.owner.name, app.name);
+                const deploymentsNames = deployments.map((deployment: adapterTypes.Deployment) => deployment.name);
 
                 return this.toLegacyRestApp(app, user, deploymentsNames);
             })
@@ -81,7 +81,7 @@ class Adapter {
         return legacyApps;
     };
 
-    public toApigatewayAppCreationRequest(appToCreate: sdk_types.AppCreationRequest): adapter_types.ApigatewayAppCreationRequest {
+    public toApigatewayAppCreationRequest(appToCreate: sdkTypes.AppCreationRequest): adapterTypes.ApigatewayAppCreationRequest {
         if (
             appToCreate.os !== 'iOS' &&
             appToCreate.os !== 'Android' &&
@@ -100,7 +100,7 @@ class Adapter {
         }
 
         const org: string = this.getOrgFromLegacyAppRequest(appToCreate);
-        const appcenterClientApp: adapter_types.App = this.toAppcenterClientApp(appToCreate);
+        const appcenterClientApp: adapterTypes.App = this.toAppcenterClientApp(appToCreate);
 
         if (!this.isValidAppCenterAppName(appcenterClientApp.display_name)) {
             throw this.getCodePushError(`The app name "${appcenterClientApp.display_name}" isn't valid. It can only contain alphanumeric characters, dashes, periods, or underscores.`, RequestManager.ERROR_CONFLICT);
@@ -114,7 +114,7 @@ class Adapter {
         const deploymentsToCreate = ['Staging', 'Production'];
         await Promise.all(
             deploymentsToCreate.map(async (deploymentName) => {
-                const deployment = <sdk_types.Deployment>{ name: deploymentName };
+                const deployment = <sdkTypes.Deployment>{ name: deploymentName };
                 return await this._requestManager.post(`/apps/${appOwner}/${appName}/deployments/`, JSON.stringify(deployment), /*expectResponseBody=*/ true);
             })
         );
@@ -122,7 +122,7 @@ class Adapter {
         return;
     };
 
-    public async getRenamedApp(newName: string, appOwner: string, oldName: string): Promise<adapter_types.UpdatedApp> {
+    public async getRenamedApp(newName: string, appOwner: string, oldName: string): Promise<adapterTypes.UpdatedApp> {
         const app = await this.getApp(appOwner, oldName);
 
         if (newName.indexOf('/') !== -1) {
@@ -147,24 +147,24 @@ class Adapter {
         return updatedApp;
     }
 
-    public toLegacyDeployments(deployments: adapter_types.Deployment[]): sdk_types.Deployment[] {
-        deployments.sort((first: adapter_types.Deployment, second: adapter_types.Deployment) => {
+    public toLegacyDeployments(deployments: adapterTypes.Deployment[]): sdkTypes.Deployment[] {
+        deployments.sort((first: adapterTypes.Deployment, second: adapterTypes.Deployment) => {
             return first.name.localeCompare(second.name);
         });
 
         return this.toLegacyRestDeployments(deployments);
     };
 
-    public toLegacyDeployment(deployment: adapter_types.Deployment): sdk_types.Deployment {
+    public toLegacyDeployment(deployment: adapterTypes.Deployment): sdkTypes.Deployment {
         return this.toLegacyRestDeployment(deployment);
     };
 
     public async toLegacyCollaborators(
-        userList: adapter_types.UserProfile[],
+        userList: adapterTypes.UserProfile[],
         appOwner: string,
-    ): Promise<sdk_types.CollaboratorMap> {
+    ): Promise<sdkTypes.CollaboratorMap> {
         const callingUser = await this.getUser();
-        const legacyCollaborators: sdk_types.CollaboratorMap = {};
+        const legacyCollaborators: sdkTypes.CollaboratorMap = {};
         userList.forEach((user) => {
             legacyCollaborators[user.email] = {
                 isCurrentAccount: callingUser.email === user.email,
@@ -175,9 +175,9 @@ class Adapter {
     }
 
     public async toLegacyDeploymentMetrics(
-        deploymentMetrics: adapter_types.DeploymentMetrics[],
-    ): Promise<sdk_types.DeploymentMetrics> {
-        const legacyDeploymentMetrics: sdk_types.DeploymentMetrics = {};
+        deploymentMetrics: adapterTypes.DeploymentMetrics[],
+    ): Promise<sdkTypes.DeploymentMetrics> {
+        const legacyDeploymentMetrics: sdkTypes.DeploymentMetrics = {};
         deploymentMetrics.forEach((deployment) => {
             legacyDeploymentMetrics[deployment.label] = {
                 active: deployment.active,
@@ -189,7 +189,7 @@ class Adapter {
         return legacyDeploymentMetrics;
     }
 
-    public async parseApiAppName(apiAppName: string): Promise<adapter_types.apiAppParams> {
+    public async parseApiAppName(apiAppName: string): Promise<adapterTypes.appParams> {
         const callingUser = await this.getUser();
         // If the separating / is not included, assume the owner is the calling user and only the app name is provided
         if (!apiAppName.includes("/")) {
@@ -205,11 +205,11 @@ class Adapter {
         };
     }
 
-    public toLegacyDeploymentHistory(releases: adapter_types.CodePushRelease[]): sdk_types.Package[] {
+    public toLegacyDeploymentHistory(releases: adapterTypes.CodePushRelease[]): sdkTypes.Package[] {
         return releases.map((release) => this.releaseToPackage(release));
     }
 
-    private toLegacyRestApp(app: adapter_types.App, user: adapter_types.UserProfile, deployments: string[]): sdk_types.App {
+    private toLegacyRestApp(app: adapterTypes.App, user: adapterTypes.UserProfile, deployments: string[]): sdkTypes.App {
         const isCurrentAccount: boolean = user.id === app.owner.id;
         const isNameAndDisplayNameSame: boolean = app.name === app.display_name;
 
@@ -236,8 +236,8 @@ class Adapter {
         };
     }
 
-    public toReleaseUploadProperties(updateMetadata: sdk_types.PackageInfo, releaseUploadAssets: sdk_types.ReleaseUploadAssets, deploymentName: string): sdk_types.UploadReleaseProperties {
-        const releaseUpload: sdk_types.UploadReleaseProperties = {
+    public toReleaseUploadProperties(updateMetadata: sdkTypes.PackageInfo, releaseUploadAssets: sdkTypes.ReleaseUploadAssets, deploymentName: string): sdkTypes.UploadReleaseProperties {
+        const releaseUpload: sdkTypes.UploadReleaseProperties = {
             release_upload: releaseUploadAssets,
             target_binary_version: updateMetadata.appVersion,
             deployment_name: deploymentName,
@@ -255,8 +255,8 @@ class Adapter {
         return releaseUpload;
     }
 
-    public toLegacyPackage(releasePackage: adapter_types.CodePushReleasePackage): sdk_types.Package {
-        const sdkPackage: sdk_types.Package = {
+    public toLegacyPackage(releasePackage: adapterTypes.CodePushReleasePackage): sdkTypes.Package {
+        const sdkPackage: sdkTypes.Package = {
             blobUrl: releasePackage.blob_url,
             size: releasePackage.size,
             uploadTime: releasePackage.upload_time,
@@ -287,18 +287,18 @@ class Adapter {
         return sdkPackage;
     }
 
-    private toLegacyRestDeployments(apiGatewayDeployments: adapter_types.Deployment[]): sdk_types.Deployment[] {
-        const deployments: sdk_types.Deployment[] = apiGatewayDeployments.map((deployment) => {
+    private toLegacyRestDeployments(apiGatewayDeployments: adapterTypes.Deployment[]): sdkTypes.Deployment[] {
+        const deployments: sdkTypes.Deployment[] = apiGatewayDeployments.map((deployment) => {
             return this.toLegacyRestDeployment(deployment);
         });
 
         return deployments;
     }
 
-    private toLegacyRestDeployment(deployment: adapter_types.Deployment): sdk_types.Deployment {
+    private toLegacyRestDeployment(deployment: adapterTypes.Deployment): sdkTypes.Deployment {
         const apiGatewayPackage = this.releaseToPackage(deployment.latest_release);
 
-        const restDeployment: sdk_types.Deployment = {
+        const restDeployment: sdkTypes.Deployment = {
             name: deployment.name,
             key: deployment.key,
             package: apiGatewayPackage
@@ -307,12 +307,12 @@ class Adapter {
         return restDeployment;
     }
 
-    private releaseToPackage(apiGatewayRelease: adapter_types.CodePushRelease): sdk_types.Package {
+    private releaseToPackage(apiGatewayRelease: adapterTypes.CodePushRelease): sdkTypes.Package {
         if (!apiGatewayRelease) {
             return null;
         }
 
-        const restRelease: sdk_types.Package = {
+        const restRelease: sdkTypes.Package = {
             appVersion: apiGatewayRelease.target_binary_range,
             blobUrl: apiGatewayRelease.blob_url,
             isDisabled: apiGatewayRelease.is_disabled,
@@ -333,7 +333,7 @@ class Adapter {
         return restRelease;
     }
 
-    private async getUser(): Promise<adapter_types.UserProfile> {
+    private async getUser(): Promise<adapterTypes.UserProfile> {
         try {
             const res = await this._requestManager.get(`/user`);
             return res.body;
@@ -342,7 +342,7 @@ class Adapter {
         }
     }
 
-    private async getApp(appOwner: string, appName: string): Promise<adapter_types.App> {
+    private async getApp(appOwner: string, appName: string): Promise<adapterTypes.App> {
         try {
             const res = await this._requestManager.get(`/apps/${appOwner}/${appName}`);
             return res.body;
@@ -351,7 +351,7 @@ class Adapter {
         }
     }
 
-    private async getDeployments(appOwner: string, appName: string): Promise<adapter_types.Deployment[]> {
+    private async getDeployments(appOwner: string, appName: string): Promise<adapterTypes.Deployment[]> {
         try {
             const res = await this._requestManager.get(`/apps/${appOwner}/${appName}/deployments/`);
             return res.body;
@@ -360,7 +360,7 @@ class Adapter {
         }
     }
 
-    private toLegacyUserPermission(expectedPermission: adapter_types.AppMemberPermissions, isOwner: boolean): string {
+    private toLegacyUserPermission(expectedPermission: adapterTypes.AppMemberPermissions, isOwner: boolean): string {
         if (expectedPermission === 'manager') {
             return isOwner ? 'Owner' : 'Manager';
         } else if (expectedPermission === 'developer') {
@@ -369,21 +369,21 @@ class Adapter {
         return 'Reader';
     }
 
-    private getOrgFromLegacyAppRequest(legacyCreateAppRequest: sdk_types.AppCreationRequest) {
+    private getOrgFromLegacyAppRequest(legacyCreateAppRequest: sdkTypes.AppCreationRequest) {
         const slashIndex = legacyCreateAppRequest.name.indexOf('/');
         const org = slashIndex !== -1 ? legacyCreateAppRequest.name.substring(0, slashIndex) : null;
 
         return org;
     }
 
-    private toAppcenterClientApp(legacyCreateAppRequest: sdk_types.AppCreationRequest): adapter_types.App {
+    private toAppcenterClientApp(legacyCreateAppRequest: sdkTypes.AppCreationRequest): adapterTypes.App {
         // If the app name contains a slash, then assume that the app is intended to be owned by an org, with the org name
         // before the slash. Update the app info accordingly.
         const slashIndex = legacyCreateAppRequest.name.indexOf('/');
 
         return {
-            os: legacyCreateAppRequest.os as adapter_types.AppOs,
-            platform: legacyCreateAppRequest.platform as adapter_types.AppPlatform,
+            os: legacyCreateAppRequest.os as adapterTypes.AppOs,
+            platform: legacyCreateAppRequest.platform as adapterTypes.AppPlatform,
             display_name:
                 slashIndex !== -1 ? legacyCreateAppRequest.name.substring(slashIndex + 1) : legacyCreateAppRequest.name
         };
@@ -407,7 +407,7 @@ class Adapter {
         };
     }
 
-    private getCodePushError(message: string, errorCode: number): sdk_types.CodePushError {
+    private getCodePushError(message: string, errorCode: number): sdkTypes.CodePushError {
         return {
             message: message,
             statusCode: errorCode

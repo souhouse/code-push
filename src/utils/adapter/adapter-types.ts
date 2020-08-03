@@ -198,7 +198,7 @@ export interface ApigatewayAppCreationRequest {
   org: string,
   appcenterClientApp: App
 }
-export interface apiAppParams {
+export interface appParams {
   appOwner: string;
   appName: string;
 }

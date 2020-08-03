@@ -43,9 +43,6 @@ class AccountManager {
     private _accessKey: string;
     private _requestManager: RequestManager;
     private _adapter: Adapter;
-    private _serverUrl: string;
-    private _customHeaders: Headers;
-    private _proxy: string;
     private _fileUploadClient: FileUploadClient;
 
     constructor(accessKey: string, customHeaders?: Headers, serverUrl?: string, proxy?: string) {
@@ -54,9 +51,6 @@ class AccountManager {
         this._accessKey = accessKey;
         this._requestManager = new RequestManager(accessKey, customHeaders, serverUrl, proxy);
         this._adapter = new Adapter(this._requestManager);
-        this._customHeaders = customHeaders;
-        this._serverUrl = serverUrl;
-        this._proxy = proxy;
         this._fileUploadClient = new FileUploadClient();
     }
 
@@ -153,9 +147,9 @@ class AccountManager {
         return apps;
     }
 
-    public async getApp(apiAppName: string): Promise<App> {
-        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
-        const res: JsonResponse = await this._requestManager.get(urlEncode`/apps/${appOwner}/${appName}`);
+    public async getApp(appName: string): Promise<App> {
+        const appParams = await this._adapter.parseApiAppName(appName);
+        const res: JsonResponse = await this._requestManager.get(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}`);
         const app = await this._adapter.toLegacyApp(res.body);
         return app;
     }
@@ -179,9 +173,9 @@ class AccountManager {
         return app;
     }
 
-    public async removeApp(apiAppName: string): Promise<void> {
-        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
-        await this._requestManager.del(urlEncode`/apps/${appOwner}/${appName}`);
+    public async removeApp(appName: string): Promise<void> {
+        const appParams = await this._adapter.parseApiAppName(appName);
+        await this._requestManager.del(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}`);
         return null;
     }
 
@@ -193,93 +187,93 @@ class AccountManager {
         return null;
     }
 
-    public async transferApp(apiAppName: string, orgName: string): Promise<void> {
-        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
+    public async transferApp(appName: string, orgName: string): Promise<void> {
+        const appParams = await this._adapter.parseApiAppName(appName);
 
-        await this._requestManager.post(urlEncode`/apps/${appOwner}/${appName}/transfer/${orgName}`, /*requestBody=*/ null, /*expectResponseBody=*/ false);
+        await this._requestManager.post(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}/transfer/${orgName}`, /*requestBody=*/ null, /*expectResponseBody=*/ false);
         return null;
     }
 
     // Collaborators
-    public async getCollaborators(apiAppName: string): Promise<CollaboratorMap> {
-        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
+    public async getCollaborators(appName: string): Promise<CollaboratorMap> {
+        const appParams = await this._adapter.parseApiAppName(appName);
 
-        const res: JsonResponse = await this._requestManager.get(urlEncode`/apps/${appOwner}/${appName}/users`);
-        const collaborators = await this._adapter.toLegacyCollaborators(res.body, appOwner);
+        const res: JsonResponse = await this._requestManager.get(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}/users`);
+        const collaborators = await this._adapter.toLegacyCollaborators(res.body, appParams.appOwner);
         return collaborators;
     }
 
-    public async addCollaborator(apiAppName: string, email: string): Promise<void> {
-        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
+    public async addCollaborator(appName: string, email: string): Promise<void> {
+        const appParams= await this._adapter.parseApiAppName(appName);
         const userEmailRequest = {
             user_email: email
         };
-        await this._requestManager.post(urlEncode`/apps/${appOwner}/${appName}/invitations`, JSON.stringify(userEmailRequest), /*expectResponseBody=*/ false);
+        await this._requestManager.post(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}/invitations`, JSON.stringify(userEmailRequest), /*expectResponseBody=*/ false);
         return null;
     }
 
-    public async removeCollaborator(apiAppName: string, email: string): Promise<void> {
-        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
+    public async removeCollaborator(appName: string, email: string): Promise<void> {
+        const appParams = await this._adapter.parseApiAppName(appName);
 
-        await this._requestManager.del(urlEncode`/apps/${appOwner}/${appName}/invitations/${email}`);
+        await this._requestManager.del(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}/invitations/${email}`);
         return null;
     }
 
     // Deployments
-    public async addDeployment(apiAppName: string, deploymentName: string): Promise<Deployment> {
+    public async addDeployment(appName: string, deploymentName: string): Promise<Deployment> {
         const deployment = <Deployment>{ name: deploymentName };
-        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
-        const res = await this._requestManager.post(urlEncode`/apps/${appOwner}/${appName}/deployments/`, JSON.stringify(deployment), /*expectResponseBody=*/ true);
+        const appParams = await this._adapter.parseApiAppName(appName);
+        const res = await this._requestManager.post(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}/deployments/`, JSON.stringify(deployment), /*expectResponseBody=*/ true);
 
         return this._adapter.toLegacyDeployment(res.body);
     }
 
-    public async clearDeploymentHistory(apiAppName: string, deploymentName: string): Promise<void> {
-        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
-        await this._requestManager.del(urlEncode`/apps/${appOwner}/${appName}/deployments/${deploymentName}/releases`);
+    public async clearDeploymentHistory(appName: string, deploymentName: string): Promise<void> {
+        const appParams = await this._adapter.parseApiAppName(appName);
 
+        await this._requestManager.del(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}/deployments/${deploymentName}/releases`);
         return null;
     }
 
-    public async getDeployments(apiAppName: string): Promise<Deployment[]> {
-        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
-        const res: JsonResponse = await this._requestManager.get(urlEncode`/apps/${appOwner}/${appName}/deployments/`);
+    public async getDeployments(appName: string): Promise<Deployment[]> {
+        const appParams = await this._adapter.parseApiAppName(appName);
+        const res: JsonResponse = await this._requestManager.get(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}/deployments/`);
 
         return this._adapter.toLegacyDeployments(res.body);
     }
 
-    public async getDeployment(apiAppName: string, deploymentName: string): Promise<Deployment> {
-        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
-        const res: JsonResponse = await this._requestManager.get(urlEncode`/apps/${appOwner}/${appName}/deployments/${deploymentName}`);
+    public async getDeployment(appName: string, deploymentName: string): Promise<Deployment> {
+        const appParams = await this._adapter.parseApiAppName(appName);
+        const res: JsonResponse = await this._requestManager.get(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}/deployments/${deploymentName}`);
 
         return this._adapter.toLegacyDeployment(res.body);
     }
 
-    public async renameDeployment(apiAppName: string, oldDeploymentName: string, newDeploymentName: string): Promise<void> {
-        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
-        await this._requestManager.patch(urlEncode`/apps/${appOwner}/${appName}/deployments/${oldDeploymentName}`, JSON.stringify({ name: newDeploymentName }));
+    public async renameDeployment(appName: string, oldDeploymentName: string, newDeploymentName: string): Promise<void> {
+        const appParams = await this._adapter.parseApiAppName(appName);
+        await this._requestManager.patch(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}/deployments/${oldDeploymentName}`, JSON.stringify({ name: newDeploymentName }));
 
         return null;
     }
 
-    public async removeDeployment(apiAppName: string, deploymentName: string): Promise<void> {
-        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
-        await this._requestManager.del(urlEncode`/apps/${appOwner}/${appName}/deployments/${deploymentName}`);
+    public async removeDeployment(appName: string, deploymentName: string): Promise<void> {
+        const appParams = await this._adapter.parseApiAppName(appName);
+        await this._requestManager.del(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}/deployments/${deploymentName}`);
 
         return null;
     }
 
-    public async getDeploymentMetrics(apiAppName: string, deploymentName: string): Promise<DeploymentMetrics> {
-        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
+    public async getDeploymentMetrics(appName: string, deploymentName: string): Promise<DeploymentMetrics> {
+        const appParams = await this._adapter.parseApiAppName(appName);
 
-        const res = await this._requestManager.get(urlEncode`/apps/${appOwner}/${appName}/deployments/${deploymentName}/metrics`);
+        const res = await this._requestManager.get(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}/deployments/${deploymentName}/metrics`);
         const deploymentMetrics = this._adapter.toLegacyDeploymentMetrics(res.body);
         return deploymentMetrics;
     }
 
-    public async getDeploymentHistory(apiAppName: string, deploymentName: string): Promise<Package[]> {
-        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
-        const res = await this._requestManager.get(urlEncode`/apps/${appOwner}/${appName}/deployments/${deploymentName}/releases`);
+    public async getDeploymentHistory(appName: string, deploymentName: string): Promise<Package[]> {
+        const appParams = await this._adapter.parseApiAppName(appName);
+        const res = await this._requestManager.get(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}/deployments/${deploymentName}/releases`);
 
         return this._adapter.toLegacyDeploymentHistory(res.body);
     }
