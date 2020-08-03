@@ -13,7 +13,8 @@ const testUser: adapterTypes.UserProfile = {
     can_change_password: false,
     display_name: "testDisplayName",
     email: "testEmail",
-    name: "testUserName"
+    name: "testUserName",
+    permissions: ["manager"],
 }
 
 const testDeployment: adapterTypes.Deployment = {
@@ -199,6 +200,7 @@ describe("Management SDK", () => {
 
     it("transferApp handles successful response", (done: MochaDone) => {
         mockReturn("", 201);
+        mockUser();
         manager.transferApp("appName", "email1")
             .then(
                 () => done(),
@@ -272,8 +274,8 @@ describe("Management SDK", () => {
     });
 
     it("getDeploymentHistory handles success response with two packages", (done: MochaDone) => {
-        const release: adapterTypes.CodePushRelease = {...codePushRelease, label: "v1" };
-        const release2: adapterTypes.CodePushRelease = {...codePushRelease, label: "v2" };
+        const release: adapterTypes.CodePushRelease = { ...codePushRelease, label: "v1" };
+        const release2: adapterTypes.CodePushRelease = { ...codePushRelease, label: "v2" };
 
         mockReturn(JSON.stringify([release, release2]), 200);
         mockUser();
@@ -319,6 +321,7 @@ describe("Management SDK", () => {
 
     it("addCollaborator handles successful response", (done: MochaDone) => {
         mockReturn("", 201, null, { location: "/collaborators" });
+        mockUser();
         manager.addCollaborator("appName", "email1")
             .then(
                 () => done(),
@@ -336,7 +339,8 @@ describe("Management SDK", () => {
     });
 
     it("getCollaborators handles success response with no collaborators", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ collaborators: {} }), 200);
+        mockReturn(JSON.stringify([]), 200);
+        mockUser();
 
         manager.getCollaborators("appName")
             .then((obj: any) => {
@@ -347,24 +351,27 @@ describe("Management SDK", () => {
     });
 
     it("getCollaborators handles success response with multiple collaborators", (done: MochaDone) => {
-        mockReturn(JSON.stringify({
-            collaborators: {
-                "email1": { permission: "Owner", isCurrentAccount: true },
-                "email2": { permission: "Collaborator", isCurrentAccount: false }
-            }
-        }), 200);
+        const testUser2: adapterTypes.UserProfile = {
+            ...testUser,
+            email: "testEmail2",
+            permissions: ["developer"]
+        }
+
+        mockReturn(JSON.stringify([testUser, testUser2]), 200);
+        mockUser();
 
         manager.getCollaborators("appName")
             .then((obj: any) => {
                 assert.ok(obj);
-                assert.equal(obj["email1"].permission, "Owner");
-                assert.equal(obj["email2"].permission, "Collaborator");
+                assert.equal(obj[testUser.email].permission, "Owner");
+                assert.equal(obj[testUser2.email].permission, "Collaborator");
                 done();
             }, rejectHandler);
     });
 
     it("removeCollaborator handles success response", (done: MochaDone) => {
         mockReturn("", 200);
+        mockUser();
 
         manager.removeCollaborator("appName", "email1")
             .then((obj: any) => {
