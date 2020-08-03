@@ -202,10 +202,11 @@ class AccountManager {
         return null;
     }
 
-    // Deprecated
-    public transferApp(appName: string, email: string): Promise<void> {
-        return this._requestManager.post(urlEncode`/apps/${this.appNameParam(appName)}/transfer/${email}`, /*requestBody=*/ null, /*expectResponseBody=*/ false)
-            .then(() => null);
+    public async transferApp(apiAppName: string, orgName: string): Promise<void> {
+        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
+
+        await this._requestManager.post(urlEncode`/apps/${appOwner}/${appName}/transfer/${orgName}`, /*requestBody=*/ null, /*expectResponseBody=*/ false);
+        return null;
     }
 
     // Collaborators
