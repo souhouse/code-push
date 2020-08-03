@@ -181,6 +181,15 @@ export interface CodePushRelease {
   diff_package_map?: PackageHashToBlobInfoMap;
 }
 
+export interface ReleaseModification {
+  target_binary_range: string;
+  description: string;
+  is_disabled: boolean;
+  is_mandatory: boolean;
+  rollout: number;
+  label?: string;
+}
+
 export interface DeploymentMetrics {
     label: string,
     active: number,

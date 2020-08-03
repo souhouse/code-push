@@ -255,6 +255,22 @@ class Adapter {
         return releaseUpload;
     }
 
+    public toRestReleaseModification(
+        legacyCodePushReleaseInfo: sdkTypes.PackageInfo
+    ): adapterTypes.ReleaseModification {
+        const releaseModification: adapterTypes.ReleaseModification ={
+            target_binary_range: legacyCodePushReleaseInfo.appVersion,
+            is_disabled: legacyCodePushReleaseInfo.isDisabled,
+            is_mandatory: legacyCodePushReleaseInfo.isMandatory,
+            description: legacyCodePushReleaseInfo.description,
+            rollout: legacyCodePushReleaseInfo.rollout
+        };
+
+        if (legacyCodePushReleaseInfo.label) releaseModification.label = legacyCodePushReleaseInfo.label;
+
+        return releaseModification;
+    }
+
     public releaseToPackage(releasePackage: adapterTypes.CodePushReleasePackage): sdkTypes.Package {
         const sdkPackage: sdkTypes.Package = {
             blobUrl: releasePackage.blob_url,

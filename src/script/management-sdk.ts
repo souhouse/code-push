@@ -204,7 +204,7 @@ class AccountManager {
     }
 
     public async addCollaborator(appName: string, email: string): Promise<void> {
-        const appParams= await this._adapter.parseApiAppName(appName);
+        const appParams = await this._adapter.parseApiAppName(appName);
         const userEmailRequest = {
             user_email: email
         };
@@ -281,9 +281,9 @@ class AccountManager {
     public async release(appName: string, deploymentName: string, filePath: string, targetBinaryVersion: string, updateMetadata: PackageInfo, uploadProgressCallback?: (progress: number) => void): Promise<Package> {
         updateMetadata.appVersion = targetBinaryVersion;
         const packageFile: PackageFile = await this.packageFileFromPath(filePath);
-        const userName = (await this.getAccountInfo()).name;
+        const appParams = await this._adapter.parseApiAppName(appName);
 
-        const assetJsonResponse: JsonResponse = await this._requestManager.post(urlEncode`/apps/${userName}/${appName}/deployments/${deploymentName}/uploads`, null, true)
+        const assetJsonResponse: JsonResponse = await this._requestManager.post(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}/deployments/${deploymentName}/uploads`, null, true)
         const assets = assetJsonResponse.body as ReleaseUploadAssets;
 
         await this._fileUploadClient.upload({
@@ -299,28 +299,37 @@ class AccountManager {
         });
 
         const releaseUploadProperties: UploadReleaseProperties = this._adapter.toReleaseUploadProperties(updateMetadata, assets, deploymentName);
-        const releaseJsonResponse: JsonResponse = await this._requestManager.post(urlEncode`/apps/${userName}/${appName}/deployments/${deploymentName}/releases`, JSON.stringify(releaseUploadProperties), true);
+        const releaseJsonResponse: JsonResponse = await this._requestManager.post(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}/deployments/${deploymentName}/releases`, JSON.stringify(releaseUploadProperties), true);
         const releasePackage: Package = this._adapter.releaseToPackage(releaseJsonResponse.body);
 
         return releasePackage;
     }
 
-    public patchRelease(appName: string, deploymentName: string, label: string, updateMetadata: PackageInfo): Promise<void> {
-        updateMetadata.label = label;
-        var requestBody: string = JSON.stringify({ packageInfo: updateMetadata });
-        return this._requestManager.patch(urlEncode`/apps/${this.appNameParam(appName)}/deployments/${deploymentName}/release`, requestBody, /*expectResponseBody=*/ false)
-            .then(() => null);
+    public async patchRelease(appName: string, deploymentName: string, label: string, updateMetadata: PackageInfo): Promise<void> {
+        const appParams = await this._adapter.parseApiAppName(appName);
+        const requestBody = this._adapter.toRestReleaseModification(updateMetadata);
+
+        await this._requestManager.patch(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}/deployments/${deploymentName}/release/${label}`, JSON.stringify(requestBody), /*expectResponseBody=*/ false)
+        return null;
     }
 
-    public promote(appName: string, sourceDeploymentName: string, destinationDeploymentName: string, updateMetadata: PackageInfo): Promise<Package> {
-        var requestBody: string = JSON.stringify({ packageInfo: updateMetadata });
-        return this._requestManager.post(urlEncode`/apps/${this.appNameParam(appName)}/deployments/${sourceDeploymentName}/promote/${destinationDeploymentName}`, requestBody, /*expectResponseBody=*/ true)
-            .then((res: JsonResponse) => res.body.package);
+    public async promote(appName: string, sourceDeploymentName: string, destinationDeploymentName: string, updateMetadata: PackageInfo): Promise<Package> {
+        const appParams = await this._adapter.parseApiAppName(appName);
+        const requestBody = this._adapter.toRestReleaseModification(updateMetadata);
+        const res = await this._requestManager.post(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}/deployments/${sourceDeploymentName}/promote_release/${destinationDeploymentName}`, JSON.stringify(requestBody), /*expectResponseBody=*/ true);
+        const releasePackage: Package = this._adapter.releaseToPackage(res.body);
+        
+        return releasePackage;
     }
 
-    public rollback(appName: string, deploymentName: string, targetRelease?: string): Promise<void> {
-        return this._requestManager.post(urlEncode`/apps/${this.appNameParam(appName)}/deployments/${deploymentName}/rollback/${targetRelease || ``}`, /*requestBody=*/ null, /*expectResponseBody=*/ false)
-            .then(() => null);
+    public async rollback(appName: string, deploymentName: string, targetRelease?: string): Promise<void> {
+        const appParams = await this._adapter.parseApiAppName(appName);
+        const requestBody = targetRelease ? {
+            label: targetRelease
+        } : null;
+
+        await this._requestManager.post(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}/deployments/${deploymentName}/rollback_release`, JSON.stringify(requestBody), /*expectResponseBody=*/ false);
+        return null;
     }
 
     private packageFileFromPath(filePath: string): Promise<PackageFile> {
@@ -380,21 +389,6 @@ class AccountManager {
         }
 
         return filename;
-    }
-
-    // IIS and Azure web apps have this annoying behavior where %2F (URL encoded slashes) in the URL are URL decoded
-    // BEFORE the requests reach node. That essentially means there's no good way to encode a "/" in the app name--
-    // URL encoding will work when running locally but when running on Azure it gets decoded before express sees it,
-    // so app names with slashes don't get routed properly. See https://github.com/tjanczuk/iisnode/issues/343 (or other sites
-    // that complain about the same) for some more info. I explored some IIS config based workarounds, but the previous
-    // link seems to say they won't work, so I eventually gave up on that.
-    // Anyway, to workaround this issue, we now allow the client to encode / characters as ~~ (two tildes, URL encoded).
-    // The CLI now converts / to ~~ if / appears in an app name, before passing that as part of the URL. This code below
-    // does the encoding. It's hack, but seems like the least bad option here.
-    // Eventually, this service will go away & we'll all be on Max's new service. That's hosted in docker, no more IIS,
-    // so this issue should go away then.
-    private appNameParam(appName: string) {
-        return appName.replace("/", "~~");
     }
 }
 
