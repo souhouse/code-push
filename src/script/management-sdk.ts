@@ -227,9 +227,11 @@ class AccountManager {
         return null;
     }
 
-    public removeCollaborator(appName: string, email: string): Promise<void> {
-        return this._requestManager.del(urlEncode`/apps/${this.appNameParam(appName)}/collaborators/${email}`)
-            .then(() => null);
+    public async removeCollaborator(apiAppName: string, email: string): Promise<void> {
+        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
+
+        await this._requestManager.del(urlEncode`/apps/${appOwner}/${appName}/invitations/${email}`);
+        return null;
     }
 
     // Deployments
