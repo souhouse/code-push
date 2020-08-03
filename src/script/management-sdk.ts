@@ -218,9 +218,13 @@ class AccountManager {
         return collaborators;
     }
 
-    public addCollaborator(appName: string, email: string): Promise<void> {
-        return this._requestManager.post(urlEncode`/apps/${this.appNameParam(appName)}/collaborators/${email}`, /*requestBody=*/ null, /*expectResponseBody=*/ false)
-            .then(() => null);
+    public async addCollaborator(apiAppName: string, email: string): Promise<void> {
+        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
+        const userEmailRequest = {
+            user_email: email
+        };
+        await this._requestManager.post(urlEncode`/apps/${appOwner}/${appName}/invitations`, JSON.stringify(userEmailRequest), /*expectResponseBody=*/ false);
+        return null;
     }
 
     public removeCollaborator(appName: string, email: string): Promise<void> {
