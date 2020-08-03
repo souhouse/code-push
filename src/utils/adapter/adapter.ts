@@ -296,7 +296,7 @@ class Adapter {
     }
 
     private toLegacyRestDeployment(deployment: adapterTypes.Deployment): sdkTypes.Deployment {
-        const apiGatewayPackage = this.releaseToPackage(deployment.latest_release);
+        const apiGatewayPackage = deployment.latest_release ? this.releaseToPackage(deployment.latest_release) : null;
 
         const restDeployment: sdkTypes.Deployment = {
             name: deployment.name,
