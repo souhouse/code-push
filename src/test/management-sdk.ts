@@ -209,7 +209,9 @@ describe("Management SDK", () => {
     });
 
     it("addDeployment handles success response", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ deployment: { name: "name", key: "key" } }), 201, null, { location: "/deploymentName" });
+        const testDeploymentWithoutPackage: adapterTypes.Deployment = { ...testDeployment, latest_release: null }
+
+        mockReturn(JSON.stringify(testDeploymentWithoutPackage), 201, null, { location: "/deploymentName" });
 
         manager.addDeployment("appName", "deploymentName")
             .then((obj: any) => {
@@ -219,7 +221,7 @@ describe("Management SDK", () => {
     });
 
     it("getDeployment handles JSON response", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ deployment: {} }), 200);
+        mockReturn(JSON.stringify(testDeployment), 200);
         mockUser();
 
         manager.getDeployment("appName", "deploymentName")
