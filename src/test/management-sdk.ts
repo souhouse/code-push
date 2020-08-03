@@ -107,7 +107,7 @@ describe("Management SDK", () => {
 
     describe("isAuthenticated", () => {
         it("isAuthenticated handles successful auth", (done: MochaDone) => {
-            mockReturn(JSON.stringify({ authenticated: true }), 200);
+            mockReturn(JSON.stringify(testUser), 200);
             manager.isAuthenticated()
                 .then((authenticated: boolean) => {
                     assert(authenticated, "Should be authenticated");
@@ -153,7 +153,7 @@ describe("Management SDK", () => {
 
     describe("addApp", () => {
         it("addApp handles successful response", (done: MochaDone) => {
-            mockReturn(JSON.stringify({ success: true }), 201, null, { location: "/appName" });
+            mockReturn(JSON.stringify(testApp), 201, null, { location: "/appName" });
             manager.addApp("appName", "iOS", "React-Native")
                 .then((obj) => {
                     assert.ok(obj);
@@ -186,7 +186,7 @@ describe("Management SDK", () => {
 
     describe("updateApp", () => {
         it("updateApp handles success response", (done: MochaDone) => {
-            mockReturn(JSON.stringify({ apps: [] }), 200);
+            mockReturn(JSON.stringify(testApp), 200);
 
             manager.renameApp("appName", "newAppName")
                 .then((obj: any) => {
@@ -263,7 +263,7 @@ describe("Management SDK", () => {
 
     describe("renameDeployment", () => {
         it("renameDeployment handles success response", (done: MochaDone) => {
-            mockReturn(JSON.stringify({ apps: [] }), 200);
+            mockReturn(JSON.stringify(testApp), 200);
 
             manager.renameDeployment("appName", "deploymentName", "newDeploymentName")
                 .then((obj: any) => {
@@ -417,7 +417,8 @@ describe("Management SDK", () => {
 
     describe("patchRelease", () => {
         it("patchRelease handles success response", (done: MochaDone) => {
-            mockReturn(JSON.stringify({ package: { description: "newDescription" } }), 200);
+            const newReleasePackage: adapterTypes.CodePushRelease = { ...codePushRelease, description: "newDescription" };
+            mockReturn(JSON.stringify(newReleasePackage), 200);
 
             manager.patchRelease("appName", "deploymentName", "label", { description: "newDescription" })
                 .then((obj: any) => {
@@ -462,7 +463,7 @@ describe("Management SDK", () => {
 
     describe("rollback", () => {
         it("rollback handles success response", (done: MochaDone) => {
-            mockReturn(JSON.stringify({ package: { label: "v1" } }), 200);
+            mockReturn(JSON.stringify(codePushRelease), 200);
 
             manager.rollback("appName", "deploymentName", "v1")
                 .then((obj: any) => {
