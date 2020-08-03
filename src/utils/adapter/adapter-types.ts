@@ -171,6 +171,7 @@ export interface CodePushRelease {
   is_disabled?: boolean;
   package_hash?: string;
   released_by?: string;
+  description?: string;
   release_method?: string;
   upload_time: number;
   is_mandatory?: boolean;

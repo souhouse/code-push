@@ -35,6 +35,7 @@ const testApp: adapterTypes.App = {
 
 const codePushRelease: adapterTypes.CodePushRelease = {
     releasedByUserId: "testUserID",
+    description: "testDescription",
     manifestBlobUrl: "testManifestBlobUrl",
     target_binary_range: "testTargetBinaryRange",
     upload_time: 123456789,
@@ -437,7 +438,9 @@ describe("Management SDK", () => {
 
     describe("promote", () => {
         it("promote handles success response", (done: MochaDone) => {
-            mockReturn(JSON.stringify({ package: { description: "newDescription" } }), 200);
+            const newReleasePackage: adapterTypes.CodePushRelease = { ...codePushRelease, description: "newDescription" };
+
+            mockReturn(JSON.stringify(newReleasePackage), 200);
 
             manager.promote("appName", "deploymentName", "newDeploymentName", { description: "newDescription" })
                 .then((obj: any) => {
