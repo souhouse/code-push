@@ -6,8 +6,9 @@ import * as yazl from "yazl";
 import Adapter from "../utils/adapter/adapter"
 import RequestManager from "../utils/request-manager"
 import { CodePushUnauthorizedError } from "../utils/code-push-error"
+import FileUploadClient, { IProgress } from "appcenter-file-upload-client";
 
-import { AccessKey, AccessKeyRequest, Account, App, AppCreationRequest, CodePushError, CollaboratorMap, CollaboratorProperties, Deployment, DeploymentMetrics, Headers, Package, PackageInfo, ServerAccessKey, Session, UpdateMetrics } from "./types";
+import { AccessKey, AccessKeyRequest, Account, App, AppCreationRequest, CollaboratorMap, CollaboratorProperties, Deployment, DeploymentMetrics, Headers, Package, PackageInfo, ServerAccessKey, Session, UpdateMetrics, ReleaseUploadAssets, UploadReleaseProperties, CodePushError } from "./types";
 
 interface JsonResponse {
     headers: Headers;
@@ -41,6 +42,10 @@ class AccountManager {
     private _accessKey: string;
     private _requestManager: RequestManager;
     private _adapter: Adapter;
+    private _serverUrl: string;
+    private _customHeaders: Headers;
+    private _proxy: string;
+    private _fileUploadClient: FileUploadClient;
 
     constructor(accessKey: string, customHeaders?: Headers, serverUrl?: string, proxy?: string) {
         if (!accessKey) throw new CodePushUnauthorizedError("A token must be specified.");
@@ -48,6 +53,10 @@ class AccountManager {
         this._accessKey = accessKey;
         this._requestManager = new RequestManager(accessKey, customHeaders, serverUrl, proxy);
         this._adapter = new Adapter(this._requestManager);
+        this._customHeaders = customHeaders;
+        this._serverUrl = serverUrl;
+        this._proxy = proxy;
+        this._fileUploadClient = new FileUploadClient();
     }
 
     public get accessKey(): string {
@@ -263,54 +272,32 @@ class AccountManager {
         return this._adapter.toLegacyDeploymentHistory(res.body);
     }
 
-    // public release(appName: string, deploymentName: string, filePath: string, targetBinaryVersion: string, updateMetadata: PackageInfo, uploadProgressCallback?: (progress: number) => void): Promise<Package> {
+    public async release(appName: string, deploymentName: string, filePath: string, targetBinaryVersion: string, updateMetadata: PackageInfo, uploadProgressCallback?: (progress: number) => void): Promise<Package> {
+        updateMetadata.appVersion = targetBinaryVersion;
+        const packageFile: PackageFile = await this.packageFileFromPath(filePath);
+        const userName = (await this.getAccountInfo()).name;
 
-    //     return new Promise<Package>((resolve, reject) => {
+        const assetJsonResponse: JsonResponse = await this._requestManager.post(urlEncode`/apps/${userName}/${appName}/deployments/${deploymentName}/uploads`, null, true)
+        const assets = assetJsonResponse.body as ReleaseUploadAssets;
 
-    //         updateMetadata.appVersion = targetBinaryVersion;
-    //         var request: superagent.Request = superagent.post(this._serverUrl + urlEncode`/apps/${this.appNameParam(appName)}/deployments/${deploymentName}/release`);
-    //         if (this._proxy) (<any>request).proxy(this._proxy);
-    //         this.attachCredentials(request);
+        await this._fileUploadClient.upload({
+            assetId: assets.id,
+            assetDomain: assets.upload_domain,
+            assetToken: assets.token,
+            file: packageFile.path,
+            onProgressChanged: (progressData: IProgress) => {
+                if (uploadProgressCallback) {
+                    uploadProgressCallback(progressData.percentCompleted);
+                }
+            },
+        });
 
-    //         var getPackageFilePromise: Promise<PackageFile> = this.packageFileFromPath(filePath);
+        const releaseUploadProperties: UploadReleaseProperties = this._adapter.toReleaseUploadProperties(updateMetadata, assets, deploymentName);
+        const releaseJsonResponse: JsonResponse = await this._requestManager.post(urlEncode`/apps/${userName}/${appName}/deployments/${deploymentName}/releases`, JSON.stringify(releaseUploadProperties), true);
+        const releasePackage: Package = this._adapter.toLegacyPackage(releaseJsonResponse.body);
 
-    //         getPackageFilePromise.then((packageFile: PackageFile) => {
-    //             var file: any = fs.createReadStream(packageFile.path);
-    //             request.attach("package", file)
-    //                 .field("packageInfo", JSON.stringify(updateMetadata))
-    //                 .on("progress", (event: any) => {
-    //                     if (uploadProgressCallback && event && event.total > 0) {
-    //                         var currentProgress: number = event.loaded / event.total * 100;
-    //                         uploadProgressCallback(currentProgress);
-    //                     }
-    //                 })
-    //                 .end((err: any, res: superagent.Response) => {
-
-    //                     if (packageFile.isTemporary) {
-    //                         fs.unlinkSync(packageFile.path);
-    //                     }
-
-    //                     if (err) {
-    //                         reject(this.getCodePushError(err, res));
-    //                         return;
-    //                     }
-
-    //                     try {
-    //                         var body = JSON.parse(res.text);
-    //                     } catch (err) {
-    //                         reject(<CodePushError>{ message: `Could not parse response: ${res.text}`, statusCode: AccountManager.ERROR_INTERNAL_SERVER });
-    //                         return;
-    //                     }
-
-    //                     if (res.ok) {
-    //                         resolve(<Package>body.package);
-    //                     } else {
-    //                         reject(<CodePushError>{ message: body.message, statusCode: res && res.status });
-    //                     }
-    //                 });
-    //         });
-    //     });
-    // }
+        return releasePackage;
+    }
 
     public patchRelease(appName: string, deploymentName: string, label: string, updateMetadata: PackageInfo): Promise<void> {
         updateMetadata.label = label;

@@ -236,6 +236,57 @@ class Adapter {
         };
     }
 
+    public toReleaseUploadProperties(updateMetadata: sdk_types.PackageInfo, releaseUploadAssets: sdk_types.ReleaseUploadAssets, deploymentName: string): sdk_types.UploadReleaseProperties {
+        const releaseUpload: sdk_types.UploadReleaseProperties = {
+            release_upload: releaseUploadAssets,
+            target_binary_version: updateMetadata.appVersion,
+            deployment_name: deploymentName,
+            no_duplicate_release_error: false, // This property is not implemented in CodePush SDK Management
+        }
+
+        if (updateMetadata.description) releaseUpload.description = updateMetadata.description;
+
+        if (updateMetadata.isDisabled) releaseUpload.disabled = updateMetadata.isDisabled;
+
+        if (updateMetadata.isMandatory) releaseUpload.mandatory = updateMetadata.isMandatory;
+
+        if (updateMetadata.rollout) releaseUpload.rollout = updateMetadata.rollout;
+
+        return releaseUpload;
+    }
+
+    public toLegacyPackage(releasePackage: adapter_types.CodePushReleasePackage): sdk_types.Package {
+        const sdkPackage: sdk_types.Package = {
+            blobUrl: releasePackage.blob_url,
+            size: releasePackage.size,
+            uploadTime: releasePackage.upload_time,
+            isDisabled: !!releasePackage.is_disabled,
+            isMandatory: !!releasePackage.is_mandatory,
+        }
+
+        if (releasePackage.target_binary_range) sdkPackage.appVersion = releasePackage.target_binary_range;
+
+        if (releasePackage.description) sdkPackage.description = releasePackage.description;
+
+        if (releasePackage.label) sdkPackage.label = releasePackage.label;
+
+        if (releasePackage.package_hash) sdkPackage.packageHash = releasePackage.package_hash;
+
+        if (releasePackage.rollout) sdkPackage.rollout = releasePackage.rollout;
+
+        if (releasePackage.diff_package_map) sdkPackage.diffPackageMap = releasePackage.diff_package_map;
+
+        if (releasePackage.original_label) sdkPackage.originalLabel = releasePackage.original_label;
+
+        if (releasePackage.original_deployment) sdkPackage.originalDeployment = releasePackage.original_deployment;
+
+        if (releasePackage.released_by) sdkPackage.releasedBy = releasePackage.released_by;
+
+        if (releasePackage.release_method) sdkPackage.releaseMethod = releasePackage.release_method;
+
+        return sdkPackage;
+    }
+
     private toLegacyRestDeployments(apiGatewayDeployments: adapter_types.Deployment[]): sdk_types.Deployment[] {
         const deployments: sdk_types.Deployment[] = apiGatewayDeployments.map((deployment) => {
             return this.toLegacyRestDeployment(deployment);
