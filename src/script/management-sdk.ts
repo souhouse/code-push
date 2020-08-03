@@ -65,7 +65,18 @@ class AccountManager {
     }
 
     public async isAuthenticated(throwIfUnauthorized?: boolean): Promise<boolean> {
-        const res: JsonResponse = await this._requestManager.get(urlEncode`/user`, false, throwIfUnauthorized);
+        let res: JsonResponse;
+        let codePushError: CodePushError;
+
+        try {
+            res = await this._requestManager.get(urlEncode`/user`, false);
+        } catch (error) {
+            codePushError = error as CodePushError;
+            if (codePushError && (codePushError.statusCode !== AccountManager.ERROR_UNAUTHORIZED || throwIfUnauthorized)) {
+                throw codePushError;
+            }
+        }
+
         const authenticated: boolean = !!res && !!res.body;
 
         return authenticated;
