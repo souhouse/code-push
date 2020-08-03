@@ -76,15 +76,11 @@ class AccountManager {
     }
 
     // Deprecated
-    public getAccessKey(accessKeyName: string): Promise<AccessKey> {
-        return this._requestManager.get(urlEncode`/accessKeys/${accessKeyName}`)
-            .then((res: JsonResponse) => {
-                return {
-                    createdTime: res.body.accessKey.createdTime,
-                    expires: res.body.accessKey.expires,
-                    name: res.body.accessKey.friendlyName,
-                };
-            })
+    public getAccessKey(accessKeyName: string): CodePushError {
+        throw {
+            message: 'Method is deprecated',
+            statusCode: 404
+        }
     }
 
     public async getAccessKeys(): Promise<AccessKey[]> {
@@ -94,44 +90,19 @@ class AccountManager {
     }
 
     // Deprecated
-    public getSessions(): Promise<Session[]> {
-        return this._requestManager.get(urlEncode`/accessKeys`)
-            .then((res: JsonResponse) => {
-                // A machine name might be associated with multiple session keys,
-                // but we should only return one per machine name.
-                var sessionMap: { [machineName: string]: Session } = {};
-                var now: number = new Date().getTime();
-                res.body.accessKeys.forEach((serverAccessKey: ServerAccessKey) => {
-                    if (serverAccessKey.isSession && serverAccessKey.expires > now) {
-                        sessionMap[serverAccessKey.createdBy] = {
-                            loggedInTime: serverAccessKey.createdTime,
-                            machineName: serverAccessKey.createdBy
-                        };
-                    }
-                });
-
-                var sessions: Session[] = Object.keys(sessionMap)
-                    .map((machineName: string) => sessionMap[machineName]);
-
-                return sessions;
-            });
+    public getSessions(): CodePushError {
+        throw {
+            message: 'Method is deprecated',
+            statusCode: 404
+        }
     }
 
     // Deprecated
-    public patchAccessKey(oldName: string, newName?: string, ttl?: number): Promise<AccessKey> {
-        var accessKeyRequest: AccessKeyRequest = {
-            friendlyName: newName,
-            ttl
-        };
-
-        return this._requestManager.patch(urlEncode`/accessKeys/${oldName}`, JSON.stringify(accessKeyRequest))
-            .then((res: JsonResponse) => {
-                return {
-                    createdTime: res.body.accessKey.createdTime,
-                    expires: res.body.accessKey.expires,
-                    name: res.body.accessKey.friendlyName,
-                };
-            });
+    public patchAccessKey(oldName: string, newName?: string, ttl?: number): CodePushError {
+        throw {
+            message: 'Method is deprecated',
+            statusCode: 404
+        }
     }
 
     public async removeAccessKey(name: string): Promise<void> {
@@ -140,9 +111,11 @@ class AccountManager {
     }
 
     // Deprecated
-    public removeSession(machineName: string): Promise<void> {
-        return this._requestManager.del(urlEncode`/sessions/${machineName}`)
-            .then(() => null);
+    public removeSession(machineName: string): CodePushError {
+        throw {
+            message: 'Method is deprecated',
+            statusCode: 404
+        }
     }
 
     // Account
