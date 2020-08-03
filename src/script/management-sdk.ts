@@ -300,7 +300,7 @@ class AccountManager {
 
         const releaseUploadProperties: UploadReleaseProperties = this._adapter.toReleaseUploadProperties(updateMetadata, assets, deploymentName);
         const releaseJsonResponse: JsonResponse = await this._requestManager.post(urlEncode`/apps/${userName}/${appName}/deployments/${deploymentName}/releases`, JSON.stringify(releaseUploadProperties), true);
-        const releasePackage: Package = this._adapter.toLegacyPackage(releaseJsonResponse.body);
+        const releasePackage: Package = this._adapter.releaseToPackage(releaseJsonResponse.body);
 
         return releasePackage;
     }

@@ -255,7 +255,7 @@ class Adapter {
         return releaseUpload;
     }
 
-    public toLegacyPackage(releasePackage: adapterTypes.CodePushReleasePackage): sdkTypes.Package {
+    public releaseToPackage(releasePackage: adapterTypes.CodePushReleasePackage): sdkTypes.Package {
         const sdkPackage: sdkTypes.Package = {
             blobUrl: releasePackage.blob_url,
             size: releasePackage.size,
@@ -305,32 +305,6 @@ class Adapter {
         };
 
         return restDeployment;
-    }
-
-    private releaseToPackage(apiGatewayRelease: adapterTypes.CodePushRelease): sdkTypes.Package {
-        if (!apiGatewayRelease) {
-            return null;
-        }
-
-        const restRelease: sdkTypes.Package = {
-            appVersion: apiGatewayRelease.target_binary_range,
-            blobUrl: apiGatewayRelease.blob_url,
-            isDisabled: apiGatewayRelease.is_disabled,
-            isMandatory: apiGatewayRelease.is_mandatory,
-            label: apiGatewayRelease.label,
-            packageHash: apiGatewayRelease.package_hash,
-            releasedByUserId: apiGatewayRelease.released_by,
-            releaseMethod: apiGatewayRelease.release_method,
-            rollout: apiGatewayRelease.rollout,
-            size: apiGatewayRelease.size,
-            uploadTime: apiGatewayRelease.upload_time
-        };
-
-        if (apiGatewayRelease.diff_package_map) {
-            restRelease.diffPackageMap = apiGatewayRelease.diff_package_map;
-        }
-
-        return restRelease;
     }
 
     private async getUser(): Promise<adapterTypes.UserProfile> {
