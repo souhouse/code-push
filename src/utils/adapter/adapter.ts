@@ -174,6 +174,21 @@ class Adapter {
         return legacyCollaborators;
     }
 
+    public async toLegacyDeploymentMetrics(
+        deploymentMetrics: adapter_types.DeploymentMetrics[],
+    ): Promise<sdk_types.DeploymentMetrics> {
+        const legacyDeploymentMetrics: sdk_types.DeploymentMetrics = {};
+        deploymentMetrics.forEach((deployment) => {
+            legacyDeploymentMetrics[deployment.label] = {
+                active: deployment.active,
+                downloaded: deployment.downloaded,
+                failed: deployment.failed,
+                installed: deployment.installed
+            };
+        });
+        return legacyDeploymentMetrics;
+    }
+
     public async parseApiAppName(apiAppName: string): Promise<adapter_types.apiAppParams> {
         const callingUser = await this.getUser();
         // If the separating / is not included, assume the owner is the calling user and only the app name is provided

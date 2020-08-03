@@ -278,9 +278,12 @@ class AccountManager {
         return null;
     }
 
-    public getDeploymentMetrics(appName: string, deploymentName: string): Promise<DeploymentMetrics> {
-        return this._requestManager.get(urlEncode`/apps/${this.appNameParam(appName)}/deployments/${deploymentName}/metrics`)
-            .then((res: JsonResponse) => res.body.metrics);
+    public async getDeploymentMetrics(apiAppName: string, deploymentName: string): Promise<DeploymentMetrics> {
+        const { appOwner, appName } = await this._adapter.parseApiAppName(apiAppName);
+
+        const res = await this._requestManager.get(urlEncode`/apps/${appOwner}/${appName}/deployments/${deploymentName}/metrics`);
+        const deploymentMetrics = this._adapter.toLegacyDeploymentMetrics(res.body);
+        return deploymentMetrics;
     }
 
     public async getDeploymentHistory(apiAppName: string, deploymentName: string): Promise<Package[]> {

@@ -181,6 +181,13 @@ export interface CodePushRelease {
   diff_package_map?: PackageHashToBlobInfoMap;
 }
 
+export interface DeploymentMetrics {
+    label: string,
+    active: number,
+    downloaded: number,
+    failed: number,
+    installed: number
+}
 
 export interface UpdatedApp {
   name: string;
