@@ -34,9 +34,7 @@ const testApp: adapterTypes.App = {
 }
 
 const codePushRelease: adapterTypes.CodePushRelease = {
-    releasedByUserId: "testUserID",
     description: "testDescription",
-    manifestBlobUrl: "testManifestBlobUrl",
     target_binary_range: "testTargetBinaryRange",
     upload_time: 123456789,
     blob_url: "testBlobUrl",

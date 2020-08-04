@@ -165,20 +165,20 @@ export interface Deployment {
 }
 
 export interface CodePushRelease {
-  releasedByUserId: string;
-  manifestBlobUrl: string;
-  target_binary_range: string;
+  target_binary_range?: string;
   is_disabled?: boolean;
   package_hash?: string;
   released_by?: string;
   description?: string;
   release_method?: string;
-  upload_time: number;
+  upload_time?: number;
   is_mandatory?: boolean;
-  blob_url: string;
+  blob_url?: string;
   label?: string
   rollout?: number;
-  size: number;
+  size?: number;
+  original_label?: string;
+  original_deployment?: string;
   diff_package_map?: PackageHashToBlobInfoMap;
 }
 
@@ -211,22 +211,4 @@ export interface ApigatewayAppCreationRequest {
 export interface appParams {
   appOwner: string;
   appName: string;
-}
-
-export interface CodePushReleasePackage {
-  target_binary_range?: string;
-  description?: string;
-  is_disabled?: boolean;
-  is_mandatory?: boolean;
-  rollout?: number;
-  label?: string;
-  package_hash?: string;
-  blob_url?: string;
-  diff_package_map?: PackageHashToBlobInfoMap;
-  original_deployment?: string
-  original_label?: string;
-  released_by?: string;
-  release_method?: string;
-  size?: number;
-  upload_time?: number;
 }

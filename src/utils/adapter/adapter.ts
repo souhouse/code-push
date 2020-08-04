@@ -284,7 +284,7 @@ class Adapter {
         return releaseModification;
     }
 
-    public releaseToPackage(releasePackage: adapterTypes.CodePushReleasePackage): sdkTypes.Package {
+    public releaseToPackage(releasePackage: adapterTypes.CodePushRelease): sdkTypes.Package {
         const sdkPackage: sdkTypes.Package = {
             blobUrl: releasePackage.blob_url,
             size: releasePackage.size,
