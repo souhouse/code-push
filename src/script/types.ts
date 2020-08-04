@@ -151,13 +151,17 @@ export interface Package extends PackageInfo {
   /*generated*/ releaseMethod?: string; // "Upload", "Promote" or "Rollback". Unknown if unspecified
   /*generated*/ size: number;
   /*generated*/ uploadTime: number;
+  /*legacy*/ releasedByUserId?: string;
+  /*legacy*/ manifestBlobUrl?: string;
 }
 
+/*out*/
 export interface CodePushError {
   message: string;
   statusCode: number;
 }
 
+/*in*/
 export interface AccessKey {
   createdTime: number;
   expires: number;
@@ -165,9 +169,29 @@ export interface AccessKey {
   key?: string;
 }
 
+/*inout*/
 export interface Session {
   loggedInTime: number;
   machineName: string;
+}
+
+/*in*/
+export interface ReleaseUploadAssets {
+  id: string;
+  upload_domain: string;
+  token: string;
+}
+
+/*out*/
+export interface UploadReleaseProperties {
+  release_upload: ReleaseUploadAssets,
+  target_binary_version: string,
+  deployment_name?: string,
+  description?: string,
+  disabled?: boolean,
+  mandatory?: boolean,
+  no_duplicate_release_error?: boolean,
+  rollout?: number
 }
 
 export type Headers = { [headerName: string]: string };

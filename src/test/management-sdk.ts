@@ -1,10 +1,46 @@
 import assert from "assert";
 
 import AccountManager = require("../script/management-sdk");
+import adapterTypes = require("../utils/adapter/adapter-types");
 
 var request = require("superagent");
 
 var manager: AccountManager;
+
+const testUser: adapterTypes.UserProfile = {
+    id: "testId",
+    avatar_url: "testAvatarUrl",
+    can_change_password: false,
+    display_name: "testDisplayName",
+    email: "testEmail",
+    name: "testUserName",
+    permissions: ["manager"],
+}
+
+const testDeployment: adapterTypes.Deployment = {
+    createdTime: 123,
+    name: "testDeployment1",
+    key: "testKey1"
+};
+
+const testDeployment2: adapterTypes.Deployment = {
+    createdTime: 123,
+    name: "testDeployment2",
+    key: "testKey2"
+};
+const testApp: adapterTypes.App = {
+    name: "testAppName",
+    owner: { ...testUser, type: "user" }
+}
+
+const codePushRelease: adapterTypes.CodePushRelease = {
+    description: "testDescription",
+    target_binary_range: "testTargetBinaryRange",
+    upload_time: 123456789,
+    blob_url: "testBlobUrl",
+    size: 123456789
+}
+
 describe("Management SDK", () => {
 
     beforeEach(() => {
@@ -20,7 +56,7 @@ describe("Management SDK", () => {
         mockReturn("Text", 404);
 
         var methodsWithErrorHandling: any[] = [
-            manager.addApp.bind(manager, "appName", "appOs", "appPlatform"),
+            manager.addApp.bind(manager, "appName", "iOS", "Cordova"),
             manager.getApp.bind(manager, "appName"),
             manager.renameApp.bind(manager, "appName", {}),
             manager.removeApp.bind(manager, "appName"),
@@ -67,320 +103,381 @@ describe("Management SDK", () => {
         }
     });
 
-    it("isAuthenticated handles successful auth", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ authenticated: true }), 200, {});
-        manager.isAuthenticated()
-            .then((authenticated: boolean) => {
-                assert(authenticated, "Should be authenticated");
-                done();
-            });
+    describe("isAuthenticated", () => {
+        it("isAuthenticated handles successful auth", (done: MochaDone) => {
+            mockReturn(JSON.stringify(testUser), 200);
+            manager.isAuthenticated()
+                .then((authenticated: boolean) => {
+                    assert(authenticated, "Should be authenticated");
+                    done();
+                });
+        });
+
+        it("isAuthenticated handles unsuccessful auth", (done: MochaDone) => {
+            mockReturn("Unauthorized", 401);
+            manager.isAuthenticated()
+                .then((authenticated: boolean) => {
+                    assert(!authenticated, "Should not be authenticated");
+                    done();
+                });
+        });
+
+        it("isAuthenticated handles unsuccessful auth with promise rejection", (done: MochaDone) => {
+            mockReturn("Unauthorized", 401);
+
+            // use optional parameter to ask for rejection of the promise if not authenticated
+            manager.isAuthenticated(true)
+                .then((authenticated: boolean) => {
+                    assert.fail("isAuthenticated should have rejected the promise");
+                    done();
+                }, (err) => {
+                    assert.equal(err.message, "Unauthorized", "Error message should be 'Unauthorized'");
+                    done();
+                });
+        });
+
+        it("isAuthenticated handles unexpected status codes", (done: MochaDone) => {
+            mockReturn("Not Found", 404);
+            manager.isAuthenticated()
+                .then((authenticated: boolean) => {
+                    assert.fail("isAuthenticated should have rejected the promise");
+                    done();
+                }, (err) => {
+                    assert.equal(err.message, "Not Found", "Error message should be 'Not Found'");
+                    done();
+                });
+        });
     });
 
-    it("isAuthenticated handles unsuccessful auth", (done: MochaDone) => {
-        mockReturn("Unauthorized", 401, {});
-        manager.isAuthenticated()
-            .then((authenticated: boolean) => {
-                assert(!authenticated, "Should not be authenticated");
-                done();
-            });
+    describe("addApp", () => {
+        it("addApp handles successful response", (done: MochaDone) => {
+            mockReturn(JSON.stringify(testApp), 201, null, { location: "/appName" });
+            manager.addApp("appName", "iOS", "React-Native")
+                .then((obj) => {
+                    assert.ok(obj);
+                    done();
+                }, rejectHandler);
+        });
+
+        it("addApp handles error response", (done: MochaDone) => {
+            mockReturn(JSON.stringify({ success: false }), 404);
+            manager.addApp("appName", "iOS", "React-Native")
+                .then((obj) => {
+                    throw new Error("Call should not complete successfully");
+                }, (error: Error) => done());
+        });
     });
 
-    it("isAuthenticated handles unsuccessful auth with promise rejection", (done: MochaDone) => {
-        mockReturn("Unauthorized", 401, {});
+    describe("getApp", () => {
+        it("getApp handles JSON response", (done: MochaDone) => {
+            mockReturn(JSON.stringify(testApp), 200);
+            mockUser();
+            mockReturn(JSON.stringify([testDeployment, testDeployment2]), 200, `/apps/${testUser.name}/${testApp.name}/deployments/`)
 
-        // use optional parameter to ask for rejection of the promise if not authenticated
-        manager.isAuthenticated(true)
-            .then((authenticated: boolean) => {
-                assert.fail("isAuthenticated should have rejected the promise");
-                done();
-            }, (err) => {
-                assert.equal(err.message, "Unauthorized", "Error message should be 'Unauthorized'");
-                done();
-            });
+            manager.getApp("appName")
+                .then((obj: any) => {
+                    assert.ok(obj);
+                    done();
+                }, rejectHandler);
+        });
     });
 
-    it("isAuthenticated handles unexpected status codes", (done: MochaDone) => {
-        mockReturn("Not Found", 404, {});
-        manager.isAuthenticated()
-            .then((authenticated: boolean) => {
-                assert.fail("isAuthenticated should have rejected the promise");
-                done();
-            }, (err) => {
-                assert.equal(err.message, "Not Found", "Error message should be 'Not Found'");
-                done();
-            });
+    describe("updateApp", () => {
+        it("updateApp handles success response", (done: MochaDone) => {
+            mockReturn(JSON.stringify(testApp), 200);
+
+            manager.renameApp("appName", "newAppName")
+                .then((obj: any) => {
+                    assert.ok(!obj);
+                    done();
+                }, rejectHandler);
+        });
     });
 
-    it("addApp handles successful response", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ success: true }), 201, { location: "/appName" });
-        manager.addApp("appName", "iOS", "React-Native")
-            .then((obj) => {
-                assert.ok(obj);
-                done();
-            }, rejectHandler);
+    describe("removeApp", () => {
+        it("removeApp handles success response", (done: MochaDone) => {
+            mockReturn("", 200);
+            mockUser();
+
+            manager.removeApp("appName")
+                .then((obj: any) => {
+                    assert.ok(!obj);
+                    done();
+                }, rejectHandler);
+        });
     });
 
-    it("addApp handles error response", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ success: false }), 404, {});
-        manager.addApp("appName", "iOS", "React-Native")
-            .then((obj) => {
-                throw new Error("Call should not complete successfully");
-            }, (error: Error) => done());
+    describe("transferApp", () => {
+        it("transferApp handles successful response", (done: MochaDone) => {
+            mockReturn("", 201);
+            mockUser();
+            manager.transferApp("appName", "email1")
+                .then(
+                    () => done(),
+                    rejectHandler
+                );
+        });
     });
 
-    it("getApp handles JSON response", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ app: {} }), 200, {});
+    describe("addDeployment", () => {
+        it("addDeployment handles success response", (done: MochaDone) => {
+            const testDeploymentWithoutPackage: adapterTypes.Deployment = { ...testDeployment, latest_release: null }
 
-        manager.getApp("appName")
-            .then((obj: any) => {
-                assert.ok(obj);
-                done();
-            }, rejectHandler);
+            mockReturn(JSON.stringify(testDeploymentWithoutPackage), 201, null, { location: "/deploymentName" });
+
+            manager.addDeployment("appName", "deploymentName")
+                .then((obj: any) => {
+                    assert.ok(obj);
+                    done();
+                }, rejectHandler);
+        });
     });
 
-    it("updateApp handles success response", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ apps: [] }), 200, {});
+    describe("getDeployment", () => {
+        it("getDeployment handles JSON response", (done: MochaDone) => {
+            mockReturn(JSON.stringify(testDeployment), 200);
+            mockUser();
 
-        manager.renameApp("appName", "newAppName")
-            .then((obj: any) => {
-                assert.ok(!obj);
-                done();
-            }, rejectHandler);
+            manager.getDeployment("appName", "deploymentName")
+                .then((obj: any) => {
+                    assert.ok(obj);
+                    done();
+                }, rejectHandler);
+        });
     });
 
-    it("removeApp handles success response", (done: MochaDone) => {
-        mockReturn("", 200, {});
+    describe("getDeployments", () => {
+        it("getDeployments handles JSON response", (done: MochaDone) => {
+            mockReturn(JSON.stringify([testDeployment, testDeployment2]), 200);
+            mockUser();
 
-        manager.removeApp("appName")
-            .then((obj: any) => {
-                assert.ok(!obj);
-                done();
-            }, rejectHandler);
+            manager.getDeployments("appName")
+                .then((obj: any) => {
+                    assert.ok(obj);
+                    done();
+                }, rejectHandler);
+        });
     });
 
-    it("transferApp handles successful response", (done: MochaDone) => {
-        mockReturn("", 201);
-        manager.transferApp("appName", "email1")
-            .then(
-                () => done(),
-                rejectHandler
-            );
+    describe("renameDeployment", () => {
+        it("renameDeployment handles success response", (done: MochaDone) => {
+            mockReturn(JSON.stringify(testApp), 200);
+
+            manager.renameDeployment("appName", "deploymentName", "newDeploymentName")
+                .then((obj: any) => {
+                    assert.ok(!obj);
+                    done();
+                }, rejectHandler);
+        });
     });
 
-    it("addDeployment handles success response", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ deployment: { name: "name", key: "key" } }), 201, { location: "/deploymentName" });
+    describe("removeDeployment", () => {
+        it("removeDeployment handles success response", (done: MochaDone) => {
+            mockReturn("", 200);
+            mockUser();
 
-        manager.addDeployment("appName", "deploymentName")
-            .then((obj: any) => {
-                assert.ok(obj);
-                done();
-            }, rejectHandler);
+            manager.removeDeployment("appName", "deploymentName")
+                .then((obj: any) => {
+                    assert.ok(!obj);
+                    done();
+                }, rejectHandler);
+        });
     });
 
-    it("getDeployment handles JSON response", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ deployment: {} }), 200, {});
+    describe("getDeploymentHistory", () => {
+        it("getDeploymentHistory handles success response with no packages", (done: MochaDone) => {
+            mockReturn(JSON.stringify([]), 200);
+            mockUser();
 
-        manager.getDeployment("appName", "deploymentName")
-            .then((obj: any) => {
-                assert.ok(obj);
-                done();
-            }, rejectHandler);
+            manager.getDeploymentHistory("appName", "deploymentName")
+                .then((obj: any) => {
+                    assert.ok(obj);
+                    assert.equal(obj.length, 0);
+                    done();
+                }, rejectHandler);
+        });
+
+        it("getDeploymentHistory handles success response with two packages", (done: MochaDone) => {
+            const release: adapterTypes.CodePushRelease = { ...codePushRelease, label: "v1" };
+            const release2: adapterTypes.CodePushRelease = { ...codePushRelease, label: "v2" };
+
+            mockReturn(JSON.stringify([release, release2]), 200);
+            mockUser();
+
+            manager.getDeploymentHistory("appName", "deploymentName")
+                .then((obj: any) => {
+                    assert.ok(obj);
+                    assert.equal(obj.length, 2);
+                    assert.equal(obj[0].label, "v1");
+                    assert.equal(obj[1].label, "v2");
+                    done();
+                }, rejectHandler);
+        });
+
+        it("getDeploymentHistory handles error response", (done: MochaDone) => {
+            mockReturn("", 404);
+
+            manager.getDeploymentHistory("appName", "deploymentName")
+                .then((obj: any) => {
+                    throw new Error("Call should not complete successfully");
+                }, (error: Error) => done());
+        });
     });
 
-    it("getDeployments handles JSON response", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ deployments: [] }), 200, {});
+    describe("clearDeploymentHistory", () => {
+        it("clearDeploymentHistory handles success response", (done: MochaDone) => {
+            mockReturn("", 204);
+            mockUser();
 
-        manager.getDeployments("appName")
-            .then((obj: any) => {
-                assert.ok(obj);
-                done();
-            }, rejectHandler);
+            manager.clearDeploymentHistory("appName", "deploymentName")
+                .then((obj: any) => {
+                    assert.ok(!obj);
+                    done();
+                }, rejectHandler);
+        });
+
+        it("clearDeploymentHistory handles error response", (done: MochaDone) => {
+            mockReturn("", 404);
+
+            manager.clearDeploymentHistory("appName", "deploymentName")
+                .then((obj: any) => {
+                    throw new Error("Call should not complete successfully");
+                }, (error: Error) => done());
+        });
     });
 
-    it("renameDeployment handles success response", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ apps: [] }), 200, {});
+    describe("addCollaborator", () => {
+        it("addCollaborator handles successful response", (done: MochaDone) => {
+            mockReturn("", 201, null, { location: "/collaborators" });
+            mockUser();
+            manager.addCollaborator("appName", "email1")
+                .then(
+                    () => done(),
+                    rejectHandler
+                );
+        });
 
-        manager.renameDeployment("appName", "deploymentName", "newDeploymentName")
-            .then((obj: any) => {
-                assert.ok(!obj);
-                done();
-            }, rejectHandler);
+        it("addCollaborator handles error response", (done: MochaDone) => {
+            mockReturn("", 404);
+            manager.addCollaborator("appName", "email1")
+                .then(
+                    () => { throw new Error("Call should not complete successfully") },
+                    () => done()
+                );
+        });
     });
 
-    it("removeDeployment handles success response", (done: MochaDone) => {
-        mockReturn("", 200, {});
+    describe("getCollaborators", () => {
+        it("getCollaborators handles success response with no collaborators", (done: MochaDone) => {
+            mockReturn(JSON.stringify([]), 200);
+            mockUser();
 
-        manager.removeDeployment("appName", "deploymentName")
-            .then((obj: any) => {
-                assert.ok(!obj);
-                done();
-            }, rejectHandler);
-    });
+            manager.getCollaborators("appName")
+                .then((obj: any) => {
+                    assert.ok(obj);
+                    assert.equal(Object.keys(obj).length, 0);
+                    done();
+                }, rejectHandler);
+        });
 
-    it("getDeploymentHistory handles success response with no packages", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ history: [] }), 200);
-
-        manager.getDeploymentHistory("appName", "deploymentName")
-            .then((obj: any) => {
-                assert.ok(obj);
-                assert.equal(obj.length, 0);
-                done();
-            }, rejectHandler);
-    });
-
-    it("getDeploymentHistory handles success response with two packages", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ history: [{ label: "v1" }, { label: "v2" }] }), 200);
-
-        manager.getDeploymentHistory("appName", "deploymentName")
-            .then((obj: any) => {
-                assert.ok(obj);
-                assert.equal(obj.length, 2);
-                assert.equal(obj[0].label, "v1");
-                assert.equal(obj[1].label, "v2");
-                done();
-            }, rejectHandler);
-    });
-
-    it("getDeploymentHistory handles error response", (done: MochaDone) => {
-        mockReturn("", 404);
-
-        manager.getDeploymentHistory("appName", "deploymentName")
-            .then((obj: any) => {
-                throw new Error("Call should not complete successfully");
-            }, (error: Error) => done());
-    });
-
-    it("clearDeploymentHistory handles success response", (done: MochaDone) => {
-        mockReturn("", 204);
-
-        manager.clearDeploymentHistory("appName", "deploymentName")
-            .then((obj: any) => {
-                assert.ok(!obj);
-                done();
-            }, rejectHandler);
-    });
-
-    it("clearDeploymentHistory handles error response", (done: MochaDone) => {
-        mockReturn("", 404);
-
-        manager.clearDeploymentHistory("appName", "deploymentName")
-            .then((obj: any) => {
-                throw new Error("Call should not complete successfully");
-            }, (error: Error) => done());
-    });
-
-    it("addCollaborator handles successful response", (done: MochaDone) => {
-        mockReturn("", 201, { location: "/collaborators" });
-        manager.addCollaborator("appName", "email1")
-            .then(
-                () => done(),
-                rejectHandler
-            );
-    });
-
-    it("addCollaborator handles error response", (done: MochaDone) => {
-        mockReturn("", 404, {});
-        manager.addCollaborator("appName", "email1")
-            .then(
-                () => { throw new Error("Call should not complete successfully") },
-                () => done()
-            );
-    });
-
-    it("getCollaborators handles success response with no collaborators", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ collaborators: {} }), 200);
-
-        manager.getCollaborators("appName")
-            .then((obj: any) => {
-                assert.ok(obj);
-                assert.equal(Object.keys(obj).length, 0);
-                done();
-            }, rejectHandler);
-    });
-
-    it("getCollaborators handles success response with multiple collaborators", (done: MochaDone) => {
-        mockReturn(JSON.stringify({
-            collaborators: {
-                "email1": { permission: "Owner", isCurrentAccount: true },
-                "email2": { permission: "Collaborator", isCurrentAccount: false }
+        it("getCollaborators handles success response with multiple collaborators", (done: MochaDone) => {
+            const testUser2: adapterTypes.UserProfile = {
+                ...testUser,
+                email: "testEmail2",
+                permissions: ["developer"]
             }
-        }), 200);
 
-        manager.getCollaborators("appName")
-            .then((obj: any) => {
-                assert.ok(obj);
-                assert.equal(obj["email1"].permission, "Owner");
-                assert.equal(obj["email2"].permission, "Collaborator");
-                done();
-            }, rejectHandler);
+            mockReturn(JSON.stringify([testUser, testUser2]), 200);
+            mockUser();
+
+            manager.getCollaborators("appName")
+                .then((obj: any) => {
+                    assert.ok(obj);
+                    assert.equal(obj[testUser.email].permission, "Owner");
+                    assert.equal(obj[testUser2.email].permission, "Collaborator");
+                    done();
+                }, rejectHandler);
+        });
     });
 
-    it("removeCollaborator handles success response", (done: MochaDone) => {
-        mockReturn("", 200, {});
+    describe("removeCollaborator", () => {
+        it("removeCollaborator handles success response", (done: MochaDone) => {
+            mockReturn("", 200);
+            mockUser();
 
-        manager.removeCollaborator("appName", "email1")
-            .then((obj: any) => {
-                assert.ok(!obj);
-                done();
-            }, rejectHandler);
+            manager.removeCollaborator("appName", "email1")
+                .then((obj: any) => {
+                    assert.ok(!obj);
+                    done();
+                }, rejectHandler);
+        });
     });
 
-    it("patchRelease handles success response", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ package: { description: "newDescription" } }), 200);
+    describe("patchRelease", () => {
+        it("patchRelease handles success response", (done: MochaDone) => {
+            const newReleasePackage: adapterTypes.CodePushRelease = { ...codePushRelease, description: "newDescription" };
+            mockReturn(JSON.stringify(newReleasePackage), 200);
 
-        manager.patchRelease("appName", "deploymentName", "label", { description: "newDescription" })
-            .then((obj: any) => {
-                assert.ok(!obj);
-                done();
-            }, rejectHandler);
+            manager.patchRelease("appName", "deploymentName", "label", { description: "newDescription" })
+                .then((obj: any) => {
+                    assert.ok(!obj);
+                    done();
+                }, rejectHandler);
+        });
+
+        it("patchRelease handles error response", (done: MochaDone) => {
+            mockReturn("", 400);
+
+            manager.patchRelease("appName", "deploymentName", "label", {})
+                .then((obj: any) => {
+                    throw new Error("Call should not complete successfully");
+                }, (error: Error) => done());
+        });
     });
 
-    it("patchRelease handles error response", (done: MochaDone) => {
-        mockReturn("", 400);
+    describe("promote", () => {
+        it("promote handles success response", (done: MochaDone) => {
+            const newReleasePackage: adapterTypes.CodePushRelease = { ...codePushRelease, description: "newDescription" };
 
-        manager.patchRelease("appName", "deploymentName", "label", {})
-            .then((obj: any) => {
-                throw new Error("Call should not complete successfully");
-            }, (error: Error) => done());
+            mockReturn(JSON.stringify(newReleasePackage), 200);
+
+            manager.promote("appName", "deploymentName", "newDeploymentName", { description: "newDescription" })
+                .then((obj: any) => {
+                    assert.ok(obj);
+                    assert.equal(obj.description, "newDescription")
+                    done();
+                }, rejectHandler);
+        });
+
+        it("promote handles error response", (done: MochaDone) => {
+            mockReturn("", 400);
+
+            manager.promote("appName", "deploymentName", "newDeploymentName", { rollout: 123 })
+                .then((obj: any) => {
+                    throw new Error("Call should not complete successfully");
+                }, (error: Error) => done());
+        });
     });
 
-    it("promote handles success response", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ package: { description: "newDescription" } }), 200);
+    describe("rollback", () => {
+        it("rollback handles success response", (done: MochaDone) => {
+            mockReturn(JSON.stringify(codePushRelease), 200);
 
-        manager.promote("appName", "deploymentName", "newDeploymentName", { description: "newDescription" })
-            .then((obj: any) => {
-                assert.ok(obj);
-                assert.equal(obj.description, "newDescription")
-                done();
-            }, rejectHandler);
-    });
+            manager.rollback("appName", "deploymentName", "v1")
+                .then((obj: any) => {
+                    assert.ok(!obj);
+                    done();
+                }, rejectHandler);
+        });
 
-    it("promote handles error response", (done: MochaDone) => {
-        mockReturn("", 400);
+        it("rollback handles error response", (done: MochaDone) => {
+            mockReturn("", 400);
 
-        manager.promote("appName", "deploymentName", "newDeploymentName", { rollout: 123 })
-            .then((obj: any) => {
-                throw new Error("Call should not complete successfully");
-            }, (error: Error) => done());
-    });
-
-    it("rollback handles success response", (done: MochaDone) => {
-        mockReturn(JSON.stringify({ package: { label: "v1" } }), 200);
-
-        manager.rollback("appName", "deploymentName", "v1")
-            .then((obj: any) => {
-                assert.ok(!obj);
-                done();
-            }, rejectHandler);
-    });
-
-    it("rollback handles error response", (done: MochaDone) => {
-        mockReturn("", 400);
-
-        manager.rollback("appName", "deploymentName", "v1")
-            .then((obj: any) => {
-                throw new Error("Call should not complete successfully");
-            }, (error: Error) => done());
+            manager.rollback("appName", "deploymentName", "v1")
+                .then((obj: any) => {
+                    throw new Error("Call should not complete successfully");
+                }, (error: Error) => done());
+        });
     });
 });
 
@@ -389,10 +486,14 @@ function rejectHandler(val: any): void {
     assert.fail();
 }
 
+function mockUser(): void {
+    mockReturn(JSON.stringify(testUser), 200, "/user");
+}
+
 // Wrapper for superagent-mock that abstracts away information not needed for SDK tests
-function mockReturn(bodyText: string, statusCode: number, header = {}): void {
+function mockReturn(bodyText: string, statusCode: number, pattern?: string, header = {}): void {
     require("superagent-mock")(request, [{
-        pattern: "http://localhost/(\\w+)/?",
+        pattern: "http://localhost" + (pattern ? pattern : "/(\\w+)/?"),
         fixtures: function (match: any, params: any): any {
             var isOk = statusCode >= 200 && statusCode < 300;
             if (!isOk) {
