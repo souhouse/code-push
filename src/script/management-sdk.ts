@@ -304,6 +304,38 @@ class AccountManager {
         return null;
     }
 
+    // Deprecated
+    public getAccessKey(accessKeyName: string): CodePushError {
+        throw {
+            message: 'Method is deprecated',
+            statusCode: 404
+        }
+    }
+
+    // Deprecated
+    public getSessions(): CodePushError {
+        throw {
+            message: 'Method is deprecated',
+            statusCode: 404
+        }
+    }
+
+    // Deprecated
+    public patchAccessKey(oldName: string, newName?: string, ttl?: number): CodePushError {
+        throw {
+            message: 'Method is deprecated',
+            statusCode: 404
+        }
+    }
+
+    // Deprecated
+    public removeSession(machineName: string): CodePushError {
+        throw {
+            message: 'Method is deprecated',
+            statusCode: 404
+        }
+    }
+
     private packageFileFromPath(filePath: string): Promise<PackageFile> {
         var getPackageFilePromise: Promise<PackageFile>;
         if (fs.lstatSync(filePath).isDirectory()) {
@@ -350,38 +382,6 @@ class AccountManager {
             });
         }
         return getPackageFilePromise;
-    }
-
-    // Deprecated
-    public getAccessKey(accessKeyName: string): CodePushError {
-        throw {
-            message: 'Method is deprecated',
-            statusCode: 404
-        }
-    }
-
-    // Deprecated
-    public getSessions(): CodePushError {
-        throw {
-            message: 'Method is deprecated',
-            statusCode: 404
-        }
-    }
-
-    // Deprecated
-    public patchAccessKey(oldName: string, newName?: string, ttl?: number): CodePushError {
-        throw {
-            message: 'Method is deprecated',
-            statusCode: 404
-        }
-    }
-
-    // Deprecated
-    public removeSession(machineName: string): CodePushError {
-        throw {
-            message: 'Method is deprecated',
-            statusCode: 404
-        }
     }
 
     private generateRandomFilename(length: number): string {
