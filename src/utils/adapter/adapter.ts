@@ -147,6 +147,19 @@ class Adapter {
         return updatedApp;
     }
 
+    public async resolveAccessKey(accessKeyName: string): Promise<adapterTypes.ApiTokensGetResponse> {
+        const accessKeys = await this.getApiTokens();
+        const foundAccessKey = accessKeys.find((key) => {
+            return key.description === accessKeyName;
+        });
+
+        if (!foundAccessKey) {
+            throw this.getCodePushError(`Access key "${accessKeyName}" does not exist.`, RequestManager.ERROR_NOT_FOUND);
+        }
+
+        return foundAccessKey;
+    }
+
     public toLegacyDeployments(deployments: adapterTypes.Deployment[]): sdkTypes.Deployment[] {
         deployments.sort((first: adapterTypes.Deployment, second: adapterTypes.Deployment) => {
             return first.name.localeCompare(second.name);
@@ -258,7 +271,7 @@ class Adapter {
     public toRestReleaseModification(
         legacyCodePushReleaseInfo: sdkTypes.PackageInfo
     ): adapterTypes.ReleaseModification {
-        const releaseModification: adapterTypes.ReleaseModification ={
+        const releaseModification: adapterTypes.ReleaseModification = {
             target_binary_range: legacyCodePushReleaseInfo.appVersion,
             is_disabled: legacyCodePushReleaseInfo.isDisabled,
             is_mandatory: legacyCodePushReleaseInfo.isMandatory,
@@ -326,6 +339,15 @@ class Adapter {
     private async getUser(): Promise<adapterTypes.UserProfile> {
         try {
             const res = await this._requestManager.get(`/user`);
+            return res.body;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    private async getApiTokens(): Promise<adapterTypes.ApiTokensGetResponse[]> {
+        try {
+            const res = await this._requestManager.get(`/api_tokens`);
             return res.body;
         } catch (error) {
             throw error;

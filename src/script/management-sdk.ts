@@ -121,7 +121,9 @@ class AccountManager {
     }
 
     public async removeAccessKey(name: string): Promise<void> {
-        await this._requestManager.del(urlEncode`/accessKeys/${name}`);
+        const accessKey = await this._adapter.resolveAccessKey(name);
+        
+        await this._requestManager.del(urlEncode`/api_tokens/${accessKey.id}`);
         return null;
     }
 
