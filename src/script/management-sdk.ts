@@ -38,7 +38,6 @@ class AccountManager {
         OWNER: "Owner",
         COLLABORATOR: "Collaborator"
     };
-    public static ERROR_UNAUTHORIZED = 401;
 
     private _accessKey: string;
     private _requestManager: RequestManager;
@@ -66,7 +65,7 @@ class AccountManager {
             res = await this._requestManager.get(urlEncode`/user`, false);
         } catch (error) {
             codePushError = error as CodePushError;
-            if (codePushError && (codePushError.statusCode !== AccountManager.ERROR_UNAUTHORIZED || throwIfUnauthorized)) {
+            if (codePushError && (codePushError.statusCode !== RequestManager.ERROR_UNAUTHORIZED || throwIfUnauthorized)) {
                 throw codePushError;
             }
         }
