@@ -314,26 +314,17 @@ class AccountManager {
 
     // Deprecated
     public getSessions(): CodePushError {
-        throw {
-            message: 'Method is deprecated',
-            statusCode: 404
-        }
+        throw this.getDeprecatedMethodError();
     }
 
     // Deprecated
     public patchAccessKey(oldName: string, newName?: string, ttl?: number): CodePushError {
-        throw {
-            message: 'Method is deprecated',
-            statusCode: 404
-        }
+        throw this.getDeprecatedMethodError();
     }
 
     // Deprecated
     public removeSession(machineName: string): CodePushError {
-        throw {
-            message: 'Method is deprecated',
-            statusCode: 404
-        }
+        throw this.getDeprecatedMethodError();
     }
 
     private packageFileFromPath(filePath: string): Promise<PackageFile> {
@@ -393,6 +384,13 @@ class AccountManager {
         }
 
         return filename;
+    }
+
+    private getDeprecatedMethodError() {
+        return {
+            message: 'Method is deprecated',
+            statusCode: 404
+        };
     }
 }
 
