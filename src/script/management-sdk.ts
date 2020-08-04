@@ -309,7 +309,7 @@ class AccountManager {
         const appParams = await this._adapter.parseApiAppName(appName);
         const requestBody = this._adapter.toRestReleaseModification(updateMetadata);
 
-        await this._requestManager.patch(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}/deployments/${deploymentName}/release/${label}`, JSON.stringify(requestBody), /*expectResponseBody=*/ false)
+        await this._requestManager.patch(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}/deployments/${deploymentName}/releases/${label}`, JSON.stringify(requestBody), /*expectResponseBody=*/ false)
         return null;
     }
 
