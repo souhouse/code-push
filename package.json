@@ -33,10 +33,12 @@
   "devDependencies": {
     "@types/mocha": "^7.0.2",
     "@types/node": "^13.11.0",
+    "@types/prettier": "^2.0.2",
     "@types/slash": "^3.0.0",
     "@types/superagent": "^4.1.4",
     "@types/yazl": "^2.4.2",
     "mocha": "^7.1.1",
+    "prettier": "^2.0.5",
     "shx": "^0.3.2",
     "superagent-mock": "^3.7.0",
     "typescript": "^3.8.3"
