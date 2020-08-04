@@ -151,15 +151,17 @@ export interface Package extends PackageInfo {
   /*generated*/ releaseMethod?: string; // "Upload", "Promote" or "Rollback". Unknown if unspecified
   /*generated*/ size: number;
   /*generated*/ uploadTime: number;
-  releasedByUserId?: string;
-  manifestBlobUrl?: string;
+  /*legacy*/ releasedByUserId?: string;
+  /*legacy*/ manifestBlobUrl?: string;
 }
 
+/*out*/
 export interface CodePushError {
   message: string;
   statusCode: number;
 }
 
+/*in*/
 export interface AccessKey {
   createdTime: number;
   expires: number;
@@ -167,6 +169,7 @@ export interface AccessKey {
   key?: string;
 }
 
+/*inout*/
 export interface Session {
   loggedInTime: number;
   machineName: string;
@@ -179,6 +182,7 @@ export interface ReleaseUploadAssets {
   token: string;
 }
 
+/*out*/
 export interface UploadReleaseProperties {
   release_upload: ReleaseUploadAssets,
   target_binary_version: string,
