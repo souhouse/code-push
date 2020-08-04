@@ -76,6 +76,7 @@ class AccountManager {
         return authenticated;
     }
 
+    // Access keys
     public async addAccessKey(friendlyName: string, ttl?: number): Promise<AccessKey> {
         if (!friendlyName) {
             throw new CodePushUnauthorizedError("A name must be specified when adding an access key.");
@@ -90,49 +91,17 @@ class AccountManager {
         return accessKey;
     }
 
-    // Deprecated
-    public getAccessKey(accessKeyName: string): CodePushError {
-        throw {
-            message: 'Method is deprecated',
-            statusCode: 404
-        }
-    }
-
     public async getAccessKeys(): Promise<AccessKey[]> {
         const res: JsonResponse = await this._requestManager.get(urlEncode`/api_tokens`);
         const accessKeys = this._adapter.toLegacyAccessKeyList(res.body);
         return accessKeys;
     }
 
-    // Deprecated
-    public getSessions(): CodePushError {
-        throw {
-            message: 'Method is deprecated',
-            statusCode: 404
-        }
-    }
-
-    // Deprecated
-    public patchAccessKey(oldName: string, newName?: string, ttl?: number): CodePushError {
-        throw {
-            message: 'Method is deprecated',
-            statusCode: 404
-        }
-    }
-
     public async removeAccessKey(name: string): Promise<void> {
         const accessKey = await this._adapter.resolveAccessKey(name);
-        
+
         await this._requestManager.del(urlEncode`/api_tokens/${accessKey.id}`);
         return null;
-    }
-
-    // Deprecated
-    public removeSession(machineName: string): CodePushError {
-        throw {
-            message: 'Method is deprecated',
-            statusCode: 404
-        }
     }
 
     // Account
@@ -280,6 +249,7 @@ class AccountManager {
         return this._adapter.toLegacyDeploymentHistory(res.body);
     }
 
+    // Releases
     public async release(appName: string, deploymentName: string, filePath: string, targetBinaryVersion: string, updateMetadata: PackageInfo, uploadProgressCallback?: (progress: number) => void): Promise<Package> {
         updateMetadata.appVersion = targetBinaryVersion;
         const packageFile: PackageFile = await this.packageFileFromPath(filePath);
@@ -320,7 +290,7 @@ class AccountManager {
         const requestBody = this._adapter.toRestReleaseModification(updateMetadata);
         const res = await this._requestManager.post(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}/deployments/${sourceDeploymentName}/promote_release/${destinationDeploymentName}`, JSON.stringify(requestBody), /*expectResponseBody=*/ true);
         const releasePackage: Package = this._adapter.releaseToPackage(res.body);
-        
+
         return releasePackage;
     }
 
@@ -380,6 +350,38 @@ class AccountManager {
             });
         }
         return getPackageFilePromise;
+    }
+
+    // Deprecated
+    public getAccessKey(accessKeyName: string): CodePushError {
+        throw {
+            message: 'Method is deprecated',
+            statusCode: 404
+        }
+    }
+
+    // Deprecated
+    public getSessions(): CodePushError {
+        throw {
+            message: 'Method is deprecated',
+            statusCode: 404
+        }
+    }
+
+    // Deprecated
+    public patchAccessKey(oldName: string, newName?: string, ttl?: number): CodePushError {
+        throw {
+            message: 'Method is deprecated',
+            statusCode: 404
+        }
+    }
+
+    // Deprecated
+    public removeSession(machineName: string): CodePushError {
+        throw {
+            message: 'Method is deprecated',
+            statusCode: 404
+        }
     }
 
     private generateRandomFilename(length: number): string {
