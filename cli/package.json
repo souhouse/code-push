@@ -28,7 +28,7 @@
     "base-64": "^0.1.0",
     "chalk": "^1.1.0",
     "cli-table": "^0.3.1",
-    "code-push": "2.0.6",
+    "code-push": "4.0.1",
     "email-validator": "^1.0.3",
     "gradle-to-js": "^2.0.0",
     "jsonwebtoken": "^8.3.0",
@@ -52,5 +52,9 @@
     "xml2js": "^0.4.16",
     "yargs": "^6.5.0",
     "yazl": "^2.4.1"
+  },
+  "devDependencies": {
+    "@types/update-notifier": "^4.1.0",
+    "@types/yargs": "^15.0.5"
   }
 }

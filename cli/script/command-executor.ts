@@ -1,6 +1,4 @@
-﻿/// <reference path="../../definitions/generated/code-push.d.ts" />
-
-import AccountManager = require("code-push");
+﻿import AccountManager = require("code-push");
 import * as chalk from "chalk";
 var childProcess = require("child_process");
 import debugCommand from "./commands/debug";
@@ -614,14 +612,15 @@ function getTotalActiveFromDeploymentMetrics(metrics: DeploymentMetrics): number
 }
 
 function initiateExternalAuthenticationAsync(action: string, serverUrl?: string): void {
-    var message: string;
+    const SERVER_URL: string = "https://appcenter.ms"; 
+    let message: string;
 
     if (action === "link") {
         message = `Please login to Mobile Center in the browser window we've just opened.\nIf you login with an additional authentication provider (e.g. GitHub) that shares the same email address, it will be linked to your current Mobile Center account.`;
 
         // For "link" there shouldn't be a token prompt, so we go straight to the Mobile Center URL to avoid that
         log(message);
-        var url: string = serverUrl || AccountManager.MOBILE_CENTER_SERVER_URL;
+        var url: string = serverUrl || SERVER_URL;
         opener(url);
     }
     else {
@@ -630,7 +629,7 @@ function initiateExternalAuthenticationAsync(action: string, serverUrl?: string)
 
         log(message);
         var hostname: string = os.hostname();
-        var url: string = `${serverUrl || AccountManager.SERVER_URL}/auth/${action}?hostname=${hostname}`;
+        var url: string = `${serverUrl || SERVER_URL}/cli-login?hostname=${hostname}`;
         opener(url);
     }
 }
@@ -684,18 +683,6 @@ function loginWithExternalAuthentication(action: string, serverUrl?: string, pro
 
 function logout(command: cli.ICommand): Promise<void> {
     return Q(<void>null)
-        .then((): Promise<void> => {
-            if (!connectionInfo.preserveAccessKeyOnLogout) {
-                var machineName: string = os.hostname();
-                return sdk.removeSession(machineName)
-                    .catch((error: CodePushError) => {
-                        // If we are not authenticated or the session doesn't exist anymore, just swallow the error instead of displaying it
-                        if (error.statusCode !== AccountManager.ERROR_UNAUTHORIZED && error.statusCode !== AccountManager.ERROR_NOT_FOUND) {
-                            throw error;
-                        }
-                    });
-            }
-        })
         .then((): void => {
             sdk = null;
             deleteConnectionInfoCache();
@@ -1218,7 +1205,7 @@ export var releaseCordova = (command: cli.IReleaseCordovaCommand): Promise<void>
             if (platform === "ios") {
                 outputFolder = path.join(platformFolder, "www");
             } else if (platform === "android") {
-                
+
                 // Since cordova-android 7 assets directory moved to android/app/src/main/assets instead of android/assets                
                 const outputFolderVer7 = path.join(platformFolder, "app", "src", "main", "assets", "www");
                 if (fs.existsSync(outputFolderVer7)) {
