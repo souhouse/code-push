@@ -2,10 +2,11 @@
 
 import { Promise } from "q";
 import * as parser from "./command-parser";
-import { execute } from "./command-executor";
+import { execute, showNotification } from "./command-executor";
 import * as chalk from "chalk";
 
 function run(): void {
+    showNotification();
     if (!parser.command) {
         parser.showHelp(/*showRootDescription*/false);
         return;

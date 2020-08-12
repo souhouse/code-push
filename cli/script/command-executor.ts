@@ -32,6 +32,7 @@ var emailValidator = require("email-validator");
 var packageJson = require("../package.json");
 var parseXml = Q.denodeify(require("xml2js").parseString);
 var progress = require("progress");
+const boxen = require('boxen');
 import Promise = Q.Promise;
 var properties = require("properties");
 
@@ -56,6 +57,7 @@ interface ILoginConnectionInfo {
     preserveAccessKeyOnLogout?: boolean;
     proxy?: string; // To specify the proxy url explicitly, other than the environment var (HTTP_PROXY)
     noProxy?: boolean; // To suppress the environment proxy setting, like HTTP_PROXY
+    numberOfNotifications?: number;
 }
 
 export interface UpdateMetricsWithTotalActive extends UpdateMetrics {
@@ -1377,6 +1379,41 @@ export var releaseReact = (command: cli.IReleaseReactCommand): Promise<void> => 
         });
 }
 
+export function showNotification(): void {
+    const boxenOpts = {
+        padding: 1,
+        margin: 1,
+        align: 'center',
+        borderColor: 'yellow',
+        borderStyle: 'double'
+    };
+    const message: any = chalk.red("CodePush-CLI is deprecated and no longer supported!") 
+    + "\n"
+    + chalk.green("You can use Appcenter-CLI instead.")
+    + "\n"
+    + chalk.gray("More details: https://docs.microsoft.com/en-us/appcenter/cli");
+    let connectionInfoDeserialize = deserializeConnectionInfo();
+    if (!connectionInfoDeserialize) {
+        console.log(boxen(message, boxenOpts));
+        return;
+    }
+
+    if (connectionInfoDeserialize.numberOfNotifications === 0) {
+        const numberOfNotifications = connectionInfoDeserialize.numberOfNotifications + 1;
+        connectionInfoDeserialize.numberOfNotifications = numberOfNotifications;
+        const json: string = JSON.stringify(connectionInfoDeserialize);
+        fs.writeFileSync(configFilePath, json, { encoding: "utf8" });
+        console.log(boxen(message, boxenOpts));
+    } else {
+        const numberOfNotifications = connectionInfoDeserialize.numberOfNotifications>4 ? 0 : connectionInfoDeserialize.numberOfNotifications + 1;
+        connectionInfoDeserialize.numberOfNotifications = numberOfNotifications;
+        const json: string = JSON.stringify(connectionInfoDeserialize);
+        fs.writeFileSync(configFilePath, json, { encoding: "utf8" });
+    }
+
+    return;
+}
+
 function validateDeployment(appName: string, deploymentName: string): Promise<void> {
     return sdk.getDeployment(appName, deploymentName)
         .catch((err: any) => {
@@ -1474,8 +1511,8 @@ export var runReactNativeBundleCommand = (bundleName: string, development: boole
     });
 }
 
-function serializeConnectionInfo(accessKey: string, preserveAccessKeyOnLogout: boolean, customServerUrl?: string, proxy?: string, noProxy?: boolean): void {
-    var connectionInfo: ILoginConnectionInfo = { accessKey: accessKey, preserveAccessKeyOnLogout: preserveAccessKeyOnLogout, proxy: proxy, noProxy: noProxy };
+function serializeConnectionInfo(accessKey: string, preserveAccessKeyOnLogout: boolean, customServerUrl?: string, proxy?: string, noProxy?: boolean, numberOfNotifications: number = 0): void {
+    var connectionInfo: ILoginConnectionInfo = { accessKey: accessKey, preserveAccessKeyOnLogout: preserveAccessKeyOnLogout, proxy: proxy, noProxy: noProxy, numberOfNotifications: numberOfNotifications };
     if (customServerUrl) {
         connectionInfo.customServerUrl = customServerUrl;
     }

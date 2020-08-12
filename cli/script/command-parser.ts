@@ -375,7 +375,7 @@ var argv = yargs.usage(USAGE_PREFIX + " <command>")
 
         addCommonConfiguration(yargs);
     })
-    .command("register", "Register a new Mobile Center account", (yargs: yargs.Argv) => {
+    .command("register", "Register a new AppCenter account", (yargs: yargs.Argv) => {
         isValidCommandCategory = true;
         isValidCommand = true;
         yargs.usage(USAGE_PREFIX + " register")
