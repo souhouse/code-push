@@ -1389,7 +1389,7 @@ export function showNotification(): void {
     };
     const message: any = chalk.red("CodePush-CLI is deprecated and no longer supported!") 
     + "\n"
-    + chalk.green("You can use Appcenter-CLI instead.")
+    + chalk.green("You can use AppCenter-CLI instead.")
     + "\n"
     + chalk.gray("More details: https://docs.microsoft.com/en-us/appcenter/cli");
     let connectionInfoDeserialize = deserializeConnectionInfo();
