@@ -297,7 +297,7 @@ class AccountManager {
         const appParams = await this._adapter.parseApiAppName(appName);
         const requestBody = targetRelease ? {
             label: targetRelease
-        } : null;
+        } : {};
 
         await this._requestManager.post(urlEncode`/apps/${appParams.appOwner}/${appParams.appName}/deployments/${deploymentName}/rollback_release`, JSON.stringify(requestBody), /*expectResponseBody=*/ false);
         return null;
