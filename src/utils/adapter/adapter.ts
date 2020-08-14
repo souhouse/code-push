@@ -271,13 +271,16 @@ class Adapter {
     public toRestReleaseModification(
         legacyCodePushReleaseInfo: sdkTypes.PackageInfo
     ): adapterTypes.ReleaseModification {
-        const releaseModification: adapterTypes.ReleaseModification = {
-            target_binary_range: legacyCodePushReleaseInfo.appVersion,
-            is_disabled: legacyCodePushReleaseInfo.isDisabled,
-            is_mandatory: legacyCodePushReleaseInfo.isMandatory,
-            description: legacyCodePushReleaseInfo.description,
-            rollout: legacyCodePushReleaseInfo.rollout
-        };
+        let releaseModification: adapterTypes.ReleaseModification;
+        if (legacyCodePushReleaseInfo.appVersion) releaseModification.target_binary_range = legacyCodePushReleaseInfo.appVersion;
+
+        if (legacyCodePushReleaseInfo.isDisabled) releaseModification.is_disabled = legacyCodePushReleaseInfo.isDisabled;
+        
+        if (legacyCodePushReleaseInfo.isMandatory) releaseModification.is_mandatory = legacyCodePushReleaseInfo.isMandatory;
+
+        if (legacyCodePushReleaseInfo.description) releaseModification.description = legacyCodePushReleaseInfo.description;
+
+        if (legacyCodePushReleaseInfo.rollout) releaseModification.rollout = legacyCodePushReleaseInfo.rollout;
 
         if (legacyCodePushReleaseInfo.label) releaseModification.label = legacyCodePushReleaseInfo.label;
 
