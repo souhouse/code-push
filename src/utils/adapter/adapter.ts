@@ -271,11 +271,12 @@ class Adapter {
     public toRestReleaseModification(
         legacyCodePushReleaseInfo: sdkTypes.PackageInfo
     ): adapterTypes.ReleaseModification {
-        let releaseModification: adapterTypes.ReleaseModification;
+        let releaseModification: adapterTypes.ReleaseModification = {} as adapterTypes.ReleaseModification ;
+
         if (legacyCodePushReleaseInfo.appVersion) releaseModification.target_binary_range = legacyCodePushReleaseInfo.appVersion;
 
         if (legacyCodePushReleaseInfo.isDisabled) releaseModification.is_disabled = legacyCodePushReleaseInfo.isDisabled;
-        
+
         if (legacyCodePushReleaseInfo.isMandatory) releaseModification.is_mandatory = legacyCodePushReleaseInfo.isMandatory;
 
         if (legacyCodePushReleaseInfo.description) releaseModification.description = legacyCodePushReleaseInfo.description;
