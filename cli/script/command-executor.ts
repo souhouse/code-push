@@ -1208,7 +1208,7 @@ export var releaseCordova = (command: cli.IReleaseCordovaCommand): Promise<void>
                 outputFolder = path.join(platformFolder, "www");
             } else if (platform === "android") {
 
-                // Since cordova-android 7 assets directory moved to android/app/src/main/assets instead of android/assets                
+                // Since cordova-android 7 assets directory moved to android/app/src/main/assets instead of android/assets
                 const outputFolderVer7 = path.join(platformFolder, "app", "src", "main", "assets", "www");
                 if (fs.existsSync(outputFolderVer7)) {
                     outputFolder = outputFolderVer7;
@@ -1285,7 +1285,7 @@ export var releaseReact = (command: cli.IReleaseReactCommand): Promise<void> => 
     var platform: string = command.platform = command.platform.toLowerCase();
     var releaseCommand: cli.IReleaseCommand = <any>command;
 
-    // we have to add "CodePush" root forlder to make update contents file structure 
+    // we have to add "CodePush" root forlder to make update contents file structure
     // to be compatible with React Native client SDK
     outputFolder = path.join(outputFolder, "CodePush");
     mkdirp.sync(outputFolder);
@@ -1387,7 +1387,7 @@ export function showNotification(): void {
         borderColor: 'yellow',
         borderStyle: 'double'
     };
-    const message: any = chalk.red("CodePush-CLI is deprecated and no longer supported!") 
+    const message: any = chalk.red("CodePush-CLI is deprecated and no longer supported!")
     + "\n"
     + chalk.green("You can use AppCenter-CLI instead.")
     + "\n"
@@ -1418,7 +1418,7 @@ function validateDeployment(appName: string, deploymentName: string): Promise<vo
     return sdk.getDeployment(appName, deploymentName)
         .catch((err: any) => {
             // If we get an error that the deployment doesn't exist (but not the app doesn't exist), then tack on a more descriptive error message telling the user what to do
-            if (err.statusCode === AccountManager.ERROR_NOT_FOUND && err.message.indexOf("Deployment") !== -1) {
+            if (err.statusCode === 404 && err.message.indexOf("Deployment") !== -1) {
                 err.message = err.message + "\nUse \"code-push deployment list\" to view any existing deployments and \"code-push deployment add\" to add deployment(s) to the app.";
             }
             throw err;
@@ -1551,7 +1551,7 @@ function sessionRemove(command: cli.ISessionRemoveCommand): Promise<void> {
 }
 
 function releaseErrorHandler(error: CodePushError, command: cli.ICommand): void {
-    if ((<any>command).noDuplicateReleaseError && error.statusCode === AccountManager.ERROR_CONFLICT) {
+    if ((<any>command).noDuplicateReleaseError && error.statusCode === 409) {
         console.warn(chalk.yellow("[Warning] " + error.message));
     } else {
         throw error;
@@ -1630,7 +1630,7 @@ function getSdk(accessKey: string, headers: Headers, customServerUrl: string, pr
                 if (maybePromise && maybePromise.then !== undefined) {
                     maybePromise = maybePromise
                         .catch((error: any) => {
-                            if (error.statusCode && error.statusCode === AccountManager.ERROR_UNAUTHORIZED) {
+                            if (error.statusCode && error.statusCode === 401) {
                                 deleteConnectionInfoCache(/* printMessage */ false);
                             }
 
